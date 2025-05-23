@@ -253,7 +253,7 @@ func main() {
 	} else if common.Env.RunEnv == common.DevDockerComposeEnv {
 		consulRegistry = consul.NewRegistry(
 			consul.Config(&capi.Config{
-				Address: "consul:8500",
+				Address: "localhost:8500",
 				Token:   common.Env.ConsulToken,
 			}))
 	} else {
