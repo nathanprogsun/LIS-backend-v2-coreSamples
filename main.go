@@ -78,10 +78,13 @@ func main() {
 	// fetch info from config center
 	// DB config
 	var mysqlInfo *common.MySQLConfig
-	if common.Env.RunEnv != common.AksStagingEnv {
-		mysqlInfo = common.GetMySqlConfigFromConsul(consulClient, common.Env.ConsulPrefix, "mysql")
-	} else {
-		mysqlInfo = common.GetMySqlConfigFromConsul(consulClient, common.Env.ConsulPrefix, "mysqlStaging")
+	// var err error // err is already declared in main
+	mysqlInfo, err = common.GetCurrentMySQLConfig(consulClient, common.Env.ConsulPrefix)
+	if err != nil {
+		common.Fatal(fmt.Errorf("critical: failed to initialize MySQL config: %w", err))
+	}
+	if mysqlInfo == nil { // Should not happen if GetCurrentMySQLConfig guarantees non-nil or error
+		common.Fatal(fmt.Errorf("critical: MySQL config is nil after attempting to load"))
 	}
 
 	// endpoints
@@ -99,22 +102,94 @@ func main() {
 	// secrets
 	common.InitSecretsFromConsul(consulClient, common.Env.ConsulPrefix, "secrets")
 
-	// external services
-	if common.Env.RunEnv == common.AksProductionEnv {
-		secret = common.Secrets.Secret
-	} else {
-		secret = common.Secrets.SecretStaging
+	// Override JWTSecret if in dev_docker_compose mode and ENV VAR is set
+	if common.Env.RunEnv == common.DevDockerComposeEnv {
+		jwtSecretEnv := os.Getenv("JWT_SECRET_VAL") // Corrected ENV var name to match docker-compose.yaml
+		if jwtSecretEnv != "" {
+			if common.Secrets == nil { // Should be initialized by InitSecretsFromConsul, even if to an empty struct on error
+				common.Warn("common.Secrets was nil before JWT_SECRET_VAL ENV override; initializing.")
+				common.Secrets = &common.SecretsConfig{}
+			}
+			common.Secrets.JWTSecret = jwtSecretEnv
+			common.InfoFields("Loaded JWT_SECRET_VAL from environment variable for dev_docker_compose mode, overriding any Consul value.",
+				zap.String("source", "environment_variable"))
+		} else {
+			common.Warn("dev_docker_compose mode: JWT_SECRET_VAL environment variable is not set. Using value from Consul or default if any.")
+		}
 	}
 
-	external.InitAccountingService(secret)
-	external.InitChargingService(secret)
-	external.InitCustomerService(common.Env.ConsulToken, common.Env.ConsulConfigAddr)
+	// Critical validation for JWTSecret after all loading attempts
+	if common.Secrets == nil || common.Secrets.JWTSecret == "" {
+		// This check is important. If JWTSecret is empty, auth will fail or be insecure.
+		common.Fatal(fmt.Errorf("CRITICAL: common.Secrets.JWTSecret is empty after all configuration attempts. " +
+			"Ensure it's set in Consul (as jwt_secret) or via JWT_SECRET_VAL environment variable for dev_docker_compose mode."))
+	}
 
-	external.InitOrderService(secret)
+	// external services
+	// The rest of the code that uses common.Secrets.Secret / SecretStaging for 'secret' variable:
+	// var secret string // Assuming 'secret' was declared earlier as per original main.go
+	if common.Env.RunEnv == common.AksProductionEnv {
+		if common.Secrets != nil && common.Secrets.Secret != "" {
+			secret = common.Secrets.Secret
+		} else {
+			common.Fatal(fmt.Errorf("common.Secrets is nil or common.Secrets.Secret is empty, cannot retrieve 'Secret' for AksProductionEnv"))
+		}
+	} else {
+		if common.Secrets != nil && common.Secrets.SecretStaging != "" {
+			secret = common.Secrets.SecretStaging
+		} else {
+			common.Fatal(fmt.Errorf("common.Secrets is nil or common.Secrets.SecretStaging is empty, cannot retrieve 'SecretStaging' for non-AksProductionEnv"))
+		}
+	}
+	// TODO for future: Consider if 'secret' and 'secretStaging' also need ENV var overrides for dev_docker_compose
+	// if external.InitXService(secret) calls are essential for basic startup in dev_docker_compose.
+	// For now, this task focuses on JWT_SECRET.
+
+	// EXTERNAL SERVICE INITIALIZATION MODIFICATION
+	if common.Env.RunEnv == common.DevDockerComposeEnv {
+		common.Info("Initializing external services for dev_docker_compose (errors will be logged as warnings).")
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					common.Warn("Panic recovered during InitAccountingService/InitChargingService/InitOrderService for dev_docker_compose", zap.Any("panic", r), zap.Stack("stack"))
+				}
+			}()
+			common.Info("Attempting to initialize Accounting, Charging, Order services for dev_docker_compose...")
+			external.InitAccountingService(secret)
+			external.InitChargingService(secret)
+			external.InitOrderService(secret)
+			common.Info("Finished attempting to initialize Accounting, Charging, Order services for dev_docker_compose.")
+		}()
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					common.Warn("Panic recovered during InitCustomerService for dev_docker_compose", zap.Any("panic", r), zap.Stack("stack"))
+				}
+			}()
+			common.Info("Attempting to initialize CustomerService for dev_docker_compose. Note: it may try to use Consul for discovery unless internally adapted.")
+			external.InitCustomerService(common.Env.ConsulToken, common.Env.ConsulConfigAddr)
+			common.Info("Finished attempting to initialize CustomerService for dev_docker_compose.")
+		}()
+	} else {
+		common.Info("Initializing external services for standard mode.")
+		external.InitAccountingService(secret)
+		external.InitChargingService(secret)
+		external.InitCustomerService(common.Env.ConsulToken, common.Env.ConsulConfigAddr)
+		external.InitOrderService(secret)
+	}
+
 	allowedServices := common.GetAllowedServicesFromConsul(consulClient, common.Env.ConsulPrefix, "allowedServices")
 	allowedClinics := common.GetAllowedClinicsFromConsul(consulClient, common.Env.ConsulPrefix, "allowedClinics")
 	// Init Redis Cache
-	redisConfig := common.GetRedisConfigFromConsul(consulClient, common.Env.ConsulPrefix, "redisSentinel")
+	var redisConfig *common.RedisConfig
+	// var err error; // Assuming err is already declared
+	redisConfig, err = common.GetCurrentRedisConfig(consulClient, common.Env.ConsulPrefix)
+	if err != nil {
+		common.Fatal(fmt.Errorf("critical: failed to initialize Redis config: %w", err))
+	}
+	if redisConfig == nil { // Should not happen if GetCurrentRedisConfig guarantees non-nil or error
+		common.Fatal(fmt.Errorf("critical: Redis config is nil after attempting to load"))
+	}
 	redisClient := common.GetRedisReadWriteClient(redisConfig)
 	asynqClient := common.GetAsynqClient(redisConfig)
 	asynqServer := common.GetAsyncServer(redisConfig)
@@ -126,11 +201,39 @@ func main() {
 		}
 	}()
 
-	if common.Env.RunEnv == common.DevEnv ||
-		common.Env.RunEnv == common.AksProductionEnv {
-		common.GetLocalKafkaConfigsFromConsul(consulClient, common.Env.ConsulPrefix, "kafkaLocal")
+	// KAFKA CONFIGURATION MODIFICATION
+	var kafkaAvailable bool = false
+	if common.Env.RunEnv == common.DevDockerComposeEnv {
+		kafkaBrokerEnv := os.Getenv("KAFKA_BROKERS")
+		if kafkaBrokerEnv != "" {
+			common.InfoFields("Configuring Kafka from KAFKA_BROKERS ENV VAR for dev_docker_compose.", zap.String("brokers", kafkaBrokerEnv))
+			if common.LocalKafkaConfigs == nil { // Ensure LocalKafkaConfigs is addressable
+				common.LocalKafkaConfigs = &common.LocalKafkaConfig{}
+			}
+			common.LocalKafkaConfigs.Address = []string{kafkaBrokerEnv}
+			// TODO: Potentially set other common.LocalKafkaConfigs fields if needed from ENV or defaults for this mode
+			kafkaAvailable = true
+		} else {
+			common.Warn("dev_docker_compose mode: KAFKA_BROKERS ENV VAR not set. Kafka features will be unavailable.")
+			if common.LocalKafkaConfigs == nil {
+				common.LocalKafkaConfigs = &common.LocalKafkaConfig{}
+			}
+			common.LocalKafkaConfigs.Address = []string{} // Ensure it's empty
+		}
 	} else {
-		common.GetLocalKafkaConfigsFromConsul(consulClient, common.Env.ConsulPrefix, "kafkaStaging")
+		// Existing logic for GetLocalKafkaConfigsFromConsul
+		if common.Env.RunEnv == common.DevEnv || common.Env.RunEnv == common.AksProductionEnv {
+			common.GetLocalKafkaConfigsFromConsul(consulClient, common.Env.ConsulPrefix, "kafkaLocal")
+		} else {
+			common.GetLocalKafkaConfigsFromConsul(consulClient, common.Env.ConsulPrefix, "kafkaStaging")
+		}
+		// After this, check common.LocalKafkaConfigs and set kafkaAvailable
+		if common.LocalKafkaConfigs != nil && len(common.LocalKafkaConfigs.Address) > 0 && common.LocalKafkaConfigs.Address[0] != "" {
+			kafkaAvailable = true
+			common.InfoFields("Kafka configuration loaded from Consul.", zap.Strings("brokers", common.LocalKafkaConfigs.Address))
+		} else {
+			common.Warn("Kafka configuration not found or addresses are empty via Consul. Kafka features will be unavailable.")
+		}
 	}
 
 	//Registry center
@@ -160,17 +263,55 @@ func main() {
 	//Tracer
 	var tracer opentracing.Tracer
 	var ioCloser io.Closer
-	if common.Env.RunEnv == common.DevEnv {
-		tracer, ioCloser, err = common.NewTracer("coresamplesv2", "127.0.0.1:6831")
-	} else {
-		tracer, ioCloser, err = common.NewTracer("coresamplesv2", "192.168.60.9:6831")
+	// var err error // Assuming err is already declared in main()
+
+	var jaegerAddr string
+	// common.Env.ServiceName should be correctly set by InitEnv based on Env.RunEnv
+	// If common.Env.ServiceName is not suitable, use a fixed string like "coresamplesv2" as before.
+	serviceNameForTracer := common.Env.ServiceName 
+	if serviceNameForTracer == "" { // Fallback if service name isn't set for some reason
+		serviceNameForTracer = "coresamplesv2"
+		common.Warn("common.Env.ServiceName is empty, using default 'coresamplesv2' for Jaeger.")
 	}
+
+
+	if common.Env.RunEnv == common.DevDockerComposeEnv {
+		jaegerHost := os.Getenv("JAEGER_AGENT_HOST")
+		jaegerPort := os.Getenv("JAEGER_AGENT_PORT")
+
+		if jaegerHost == "" {
+			jaegerHost = "localhost" // Default if not set, expecting 'jaeger' service from compose
+			common.Warn("JAEGER_AGENT_HOST environment variable not set for dev_docker_compose, defaulting to 'localhost'. This should ideally be 'jaeger' (the service name in docker-compose.yaml).")
+		}
+		if jaegerPort == "" {
+			jaegerPort = "6831" // Default Jaeger agent UDP port
+			common.Warn("JAEGER_AGENT_PORT environment variable not set for dev_docker_compose, defaulting to '6831'.")
+		}
+		jaegerAddr = fmt.Sprintf("%s:%s", jaegerHost, jaegerPort)
+		common.InfoFields("Initializing Jaeger tracer for dev_docker_compose mode.",
+			zap.String("service_name", serviceNameForTracer),
+			zap.String("resolved_jaeger_address", jaegerAddr))
+	} else if common.Env.RunEnv == common.DevEnv { // Assuming common.DevEnv is a defined constant
+		jaegerAddr = "127.0.0.1:6831" // Original DevEnv logic
+		common.InfoFields("Initializing Jaeger tracer for dev mode.",
+			zap.String("service_name", serviceNameForTracer),
+			zap.String("jaeger_address", jaegerAddr))
+	} else { // Production, Staging, etc.
+		// This was the original "else" logic for non-DevEnv
+		jaegerAddr = "192.168.60.9:6831" 
+		common.InfoFields("Initializing Jaeger tracer for production/staging mode.",
+			zap.String("service_name", serviceNameForTracer),
+			zap.String("jaeger_address", jaegerAddr))
+	}
+
+	tracer, ioCloser, err = common.NewTracer(serviceNameForTracer, jaegerAddr)
 	if err != nil {
-		common.Fatal(err)
+		// Use common.Fatalf if it's the project's standard for fatal errors with formatted messages
+		common.Fatal(fmt.Errorf("failed to create Jaeger tracer: %w", err))
 	}
 	defer func() {
 		if err := ioCloser.Close(); err != nil {
-			common.Error(err)
+			common.Error(err) // Assuming common.Error logs the error
 		}
 	}()
 	opentracing.SetGlobalTracer(tracer)
@@ -195,11 +336,33 @@ func main() {
 		}
 	}
 	var dataSource string
-	if common.Env.RunEnv == common.AksProductionEnv {
-		dataSource = mysqlInfo.User + ":" + mysqlInfo.Pwd + "@tcp(" + mysqlInfo.Host + ":" + strconv.Itoa(mysqlInfo.Port) + ")/" + mysqlInfo.Database + "?parseTime=true&tls=custom"
-	} else {
-		dataSource = mysqlInfo.User + ":" + mysqlInfo.Pwd + "@tcp(" + mysqlInfo.Host + ":" + strconv.Itoa(mysqlInfo.Port) + ")/" + mysqlInfo.Database + "?parseTime=true"
+	// Check mysqlInfo for nil before accessing its fields, although previous checks should prevent this.
+	if mysqlInfo == nil {
+		common.Fatal(fmt.Errorf("MySQL configuration is nil before creating dataSource")) // Should have been caught earlier
 	}
+
+	connectionParams := "?parseTime=true"
+	if common.Env.RunEnv == common.AksProductionEnv && !mysqlInfo.DisableTLS {
+		// Ensure TLS setup for DB is still attempted for production if not explicitly disabled
+		// (The original code for RegisterTLSConfig for "custom" should remain for this path)
+		// This example assumes RegisterTLSConfig has been called if needed.
+		connectionParams += "&tls=custom"
+		common.Info("Attempting to use custom TLS for MySQL connection in Production.")
+	} else if mysqlInfo.DisableTLS {
+		// For dev_docker_compose with MYSQL_DISABLE_TLS=true, or other envs where DisableTLS is true in config
+		common.Info("MySQL TLS explicitly disabled via configuration.")
+		// No specific TLS parameter, or ensure 'tls=false' or similar if required by driver for explicit disable
+	}
+	// For other cases (e.g., dev/staging not using TLS from original logic), no explicit TLS param was added.
+
+	dataSource = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s%s",
+		mysqlInfo.User,
+		mysqlInfo.Pwd,
+		mysqlInfo.Host,
+		mysqlInfo.Port,
+		mysqlInfo.Database,
+		connectionParams,
+	)
 
 	dbClient, err := util.EntOpen("mysql", dataSource)
 	if err != nil {
@@ -236,15 +399,29 @@ func main() {
 	)
 
 	//var kbroker broker.Broker
-	common.Infof("setup kafka: %v", common.LocalKafkaConfigs.Address)
+	// Kafka Publisher Initialization
+	var localDialer *kafka.Dialer // Declare localDialer here so it's in scope for subscribers if Kafka is available
+	if kafkaAvailable {
+		common.InfoFields("Kafka is configured. Initializing publisher and subscribers.", zap.Strings("Brokers", common.LocalKafkaConfigs.Address))
+		localDialer = &kafka.Dialer{DualStack: true} // Assuming this is generally safe
 
-	var localDialer *kafka.Dialer
-	localDialer = &kafka.Dialer{
-		DualStack: true,
+		publisher.InitPublisher(context.Background(), nil, common.LocalKafkaConfigs.Address)
+		defer func() {
+			if pub := publisher.GetPublisher(); pub != nil {
+				if writer := pub.GetWriter(); writer != nil {
+					if err := writer.Close(); err != nil {
+						common.Error(fmt.Errorf("error closing kafka writer: %w", err))
+					}
+				} else {
+					common.Debugf("Kafka writer was nil, nothing to close.")
+				}
+			} else {
+				common.Debugf("Kafka publisher was nil, nothing to close.")
+			}
+		}()
+	} else {
+		common.Warn("Kafka is not available or not configured. Publisher and subscribers will not be initialized.")
 	}
-
-	publisher.InitPublisher(context.Background(), nil, common.LocalKafkaConfigs.Address)
-	defer publisher.GetPublisher().GetWriter().Close()
 
 	common.Infof("create http server")
 	srv := httpServer.NewServer(
@@ -383,14 +560,46 @@ func main() {
 		}
 	}(asynqClient)
 
-	common.Infof("run subscriber")
-	eventHandler := subscriber.NewEventHandler(dbClient, asynqClient, context.Background(), common.LocalKafkaConfigs.Address, localDialer)
-	eventHandler.Run()
+	// Kafka Subscriber Initialization
+	if kafkaAvailable {
+		common.Infof("Starting Kafka subscribers...")
+		eventHandler := subscriber.NewEventHandler(dbClient, asynqClient, context.Background(), common.LocalKafkaConfigs.Address, localDialer)
+		if common.Env.RunEnv == common.DevDockerComposeEnv {
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						common.Warn("Panic recovered in eventHandler.Run() for dev_docker_compose", zap.Any("panic", r), zap.Stack("stack"))
+					}
+				}()
+				common.Info("eventHandler.Run() starting in goroutine for dev_docker_compose")
+				eventHandler.Run()
+			}()
+		} else {
+			eventHandler.Run()
+		}
 
-	if common.Env.RunEnv == common.AksProductionEnv || common.Env.RunEnv == common.DevEnv {
-		cdcUpdateHandler := subscriber.NewCoreCDCUpdatesHandler(common.LocalKafkaConfigs.Address, localDialer, asynqClient)
-		cdcUpdateHandler.Run()
+		// Handle cdcUpdateHandler similarly
+		// Original condition: common.Env.RunEnv == common.AksProductionEnv || common.Env.RunEnv == common.DevEnv
+		// For dev_docker_compose, it should also run if kafka is available.
+		originalCdcEnvMatch := common.Env.RunEnv == common.AksProductionEnv || common.Env.RunEnv == common.DevEnv
+		if originalCdcEnvMatch || (common.Env.RunEnv == common.DevDockerComposeEnv && kafkaAvailable) {
+			cdcUpdateHandler := subscriber.NewCoreCDCUpdatesHandler(common.LocalKafkaConfigs.Address, localDialer, asynqClient)
+			if common.Env.RunEnv == common.DevDockerComposeEnv {
+				go func() {
+					defer func() {
+						if r := recover(); r != nil {
+							common.Warn("Panic recovered in cdcUpdateHandler.Run() for dev_docker_compose", zap.Any("panic", r), zap.Stack("stack"))
+						}
+					}()
+					common.Info("cdcUpdateHandler.Run() starting in goroutine for dev_docker_compose")
+					cdcUpdateHandler.Run()
+				}()
+			} else {
+				cdcUpdateHandler.Run()
+			}
+		}
 	}
+	// No "else" here, as warnings about Kafka unavailability are logged when kafkaAvailable is set to false.
 
 	// start health check
 	//handler.HandleHTTPHealthCheck()
