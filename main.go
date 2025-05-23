@@ -65,23 +65,20 @@ func main() {
 			localConsulClient = common.GetConsulApiClient("http", "192.168.60.9", 8500, common.Env.LocalConsulToken, "")
 		}
 	} else if common.Env.RunEnv == common.DevDockerComposeEnv {
-		consulAddr := os.Getenv("CONSUL_HTTP_ADDR")
-		if consulAddr == "" {
-			common.Fatal(fmt.Errorf("CONSUL_HTTP_ADDR environment variable not set for dev_docker_compose mode"))
+		common.InfoFields("DevDockerComposeEnv: Attempting to use Consul address from common.Env.ConsulConfigAddr", zap.String("consul_config_addr", common.Env.ConsulConfigAddr))
+		if common.Env.ConsulConfigAddr == "" {
+			common.Fatal(fmt.Errorf("common.Env.ConsulConfigAddr is empty for DevDockerComposeEnv. Ensure CONSUL_HTTP_ADDR is set or defaults are working."))
 		}
-		parts := strings.Split(consulAddr, ":")
+		parts := strings.Split(common.Env.ConsulConfigAddr, ":")
 		if len(parts) != 2 {
-			common.Fatal(fmt.Errorf("invalid CONSUL_HTTP_ADDR format: %s. Expected host:port", consulAddr))
+			common.Fatal(fmt.Errorf("common.Env.ConsulConfigAddr is malformed for DevDockerComposeEnv: %s. Expected host:port", common.Env.ConsulConfigAddr))
 		}
 		host := parts[0]
 		portStr := parts[1]
 		port, err := strconv.ParseInt(portStr, 10, 64)
 		if err != nil {
-			common.Fatal(fmt.Errorf("invalid port in CONSUL_HTTP_ADDR: %s. Error: %w", portStr, err))
+			common.Fatal(fmt.Errorf("invalid port in common.Env.ConsulConfigAddr for DevDockerComposeEnv: %s. Error: %w", portStr, err))
 		}
-		common.InfoFields("Using Consul address from CONSUL_HTTP_ADDR for dev_docker_compose mode.",
-			zap.String("host", host),
-			zap.Int64("port", port))
 		consulClient = common.GetConsulApiClient("http", host, port, common.Env.ConsulToken, "")
 	} else {
 		consulClient = common.GetConsulApiClient("http", common.Env.ConsulConfigAddr, 8500, common.Env.ConsulToken, "")
