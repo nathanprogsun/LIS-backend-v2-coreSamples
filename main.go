@@ -7,9 +7,7 @@ import (
 	"coresamples/handler"
 	"coresamples/middleware"
 	"coresamples/processor"
-	"coresamples/publisher"
 	"coresamples/service"
-	"coresamples/subscriber"
 	"coresamples/util"
 	"crypto/tls"
 	"crypto/x509"
@@ -18,25 +16,23 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/hibiken/asynq"
+	"go.uber.org/zap"
 
 	"github.com/asim/go-micro/plugins/registry/consul/v4"
 	"github.com/asim/go-micro/plugins/server/grpc/v4"
 	httpServer "github.com/asim/go-micro/plugins/server/http/v4"
 	limiter "github.com/asim/go-micro/plugins/wrapper/ratelimiter/uber/v4"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	capi "github.com/hashicorp/consul/api"
 	"github.com/opentracing/opentracing-go"
-	"github.com/segmentio/kafka-go"
 	"go-micro.dev/v4"
 	"go-micro.dev/v4/cache"
 	"go-micro.dev/v4/registry"
@@ -67,6 +63,9 @@ func main() {
 		if common.Env.RunEnv == common.AksProductionEnv {
 			localConsulClient = common.GetConsulApiClient("http", "192.168.60.9", 8500, common.Env.LocalConsulToken, "")
 		}
+	} else if common.Env.RunEnv == common.DevDockerComposeEnv {
+		// Use localhost for Consul in dev_docker_compose mode
+		consulClient = common.GetConsulApiClient("http", "localhost", 8500, common.Env.ConsulToken, "")
 	} else {
 		consulClient = common.GetConsulApiClient("http", common.Env.ConsulConfigAddr, 8500, common.Env.ConsulToken, "")
 	}
@@ -151,7 +150,7 @@ func main() {
 		func() {
 			defer func() {
 				if r := recover(); r != nil {
-					common.Warn("Panic recovered during InitAccountingService/InitChargingService/InitOrderService for dev_docker_compose", zap.Any("panic", r), zap.Stack("stack"))
+					common.Warn("Panic recovered during InitAccountingService/InitChargingService/InitOrderService for dev_docker_compose")
 				}
 			}()
 			common.Info("Attempting to initialize Accounting, Charging, Order services for dev_docker_compose...")
@@ -163,7 +162,7 @@ func main() {
 		func() {
 			defer func() {
 				if r := recover(); r != nil {
-					common.Warn("Panic recovered during InitCustomerService for dev_docker_compose", zap.Any("panic", r), zap.Stack("stack"))
+					common.Warn("Panic recovered during InitCustomerService for dev_docker_compose")
 				}
 			}()
 			common.Info("Attempting to initialize CustomerService for dev_docker_compose. Note: it may try to use Consul for discovery unless internally adapted.")
@@ -201,40 +200,39 @@ func main() {
 		}
 	}()
 
-	// KAFKA CONFIGURATION MODIFICATION
+	// Kafka configuration
+	/*
 	var kafkaAvailable bool = false
 	if common.Env.RunEnv == common.DevDockerComposeEnv {
 		kafkaBrokerEnv := os.Getenv("KAFKA_BROKERS")
 		if kafkaBrokerEnv != "" {
-			common.InfoFields("Configuring Kafka from KAFKA_BROKERS ENV VAR for dev_docker_compose.", zap.String("brokers", kafkaBrokerEnv))
-			if common.LocalKafkaConfigs == nil { // Ensure LocalKafkaConfigs is addressable
-				common.LocalKafkaConfigs = &common.LocalKafkaConfig{}
+			if common.LocalKafkaConfigs == nil {
+				common.LocalKafkaConfigs = &common.KafkaConfiguration{}
 			}
 			common.LocalKafkaConfigs.Address = []string{kafkaBrokerEnv}
-			// TODO: Potentially set other common.LocalKafkaConfigs fields if needed from ENV or defaults for this mode
-			kafkaAvailable = true
+			common.InfoFields("Configuring Kafka from KAFKA_BROKERS ENV VAR for dev_docker_compose.", zap.String("brokers", kafkaBrokerEnv))
 		} else {
-			common.Warn("dev_docker_compose mode: KAFKA_BROKERS ENV VAR not set. Kafka features will be unavailable.")
+			common.Warn("dev_docker_compose mode: KAFKA_BROKERS environment variable is not set. Kafka functionality will be limited.")
 			if common.LocalKafkaConfigs == nil {
-				common.LocalKafkaConfigs = &common.LocalKafkaConfig{}
+				common.LocalKafkaConfigs = &common.KafkaConfiguration{}
 			}
 			common.LocalKafkaConfigs.Address = []string{} // Ensure it's empty
 		}
 	} else {
 		// Existing logic for GetLocalKafkaConfigsFromConsul
-		if common.Env.RunEnv == common.DevEnv || common.Env.RunEnv == common.AksProductionEnv {
+		if common.Env.RunEnv == common.AksProductionEnv {
 			common.GetLocalKafkaConfigsFromConsul(consulClient, common.Env.ConsulPrefix, "kafkaLocal")
 		} else {
 			common.GetLocalKafkaConfigsFromConsul(consulClient, common.Env.ConsulPrefix, "kafkaStaging")
 		}
-		// After this, check common.LocalKafkaConfigs and set kafkaAvailable
-		if common.LocalKafkaConfigs != nil && len(common.LocalKafkaConfigs.Address) > 0 && common.LocalKafkaConfigs.Address[0] != "" {
-			kafkaAvailable = true
-			common.InfoFields("Kafka configuration loaded from Consul.", zap.Strings("brokers", common.LocalKafkaConfigs.Address))
-		} else {
-			common.Warn("Kafka configuration not found or addresses are empty via Consul. Kafka features will be unavailable.")
-		}
 	}
+
+	// After this, check common.LocalKafkaConfigs and set kafkaAvailable
+	if common.LocalKafkaConfigs != nil && len(common.LocalKafkaConfigs.Address) > 0 && common.LocalKafkaConfigs.Address[0] != "" {
+		kafkaAvailable = true
+		common.InfoFields("Kafka configuration loaded from Consul.", zap.Strings("brokers", common.LocalKafkaConfigs.Address))
+	}
+	*/
 
 	//Registry center
 	var consulRegistry registry.Registry
@@ -252,6 +250,12 @@ func main() {
 				Token:   common.Env.ConsulToken,
 			}),
 		)
+	} else if common.Env.RunEnv == common.DevDockerComposeEnv {
+		consulRegistry = consul.NewRegistry(
+			consul.Config(&capi.Config{
+				Address: "consul:8500",
+				Token:   common.Env.ConsulToken,
+			}))
 	} else {
 		consulRegistry = consul.NewRegistry(
 			consul.Config(&capi.Config{
@@ -400,6 +404,7 @@ func main() {
 
 	//var kbroker broker.Broker
 	// Kafka Publisher Initialization
+	/*
 	var localDialer *kafka.Dialer // Declare localDialer here so it's in scope for subscribers if Kafka is available
 	if kafkaAvailable {
 		common.InfoFields("Kafka is configured. Initializing publisher and subscribers.", zap.Strings("Brokers", common.LocalKafkaConfigs.Address))
@@ -422,6 +427,7 @@ func main() {
 	} else {
 		common.Warn("Kafka is not available or not configured. Publisher and subscribers will not be initialized.")
 	}
+	*/
 
 	common.Infof("create http server")
 	srv := httpServer.NewServer(
@@ -449,28 +455,28 @@ func main() {
 	//	v1 = router.Group("/")
 	//}
 	v1 = router.Group("/")
-	err = sentry.Init(sentry.ClientOptions{
-		// Either set your DSN here or set the SENTRY_DSN environment variable.
-		Dsn: "https://fde61d937fcf4562bc7de1e439be1f21@sentry1.vibrant-america.com/37",
-		// Either set environment and release here or set the SENTRY_ENVIRONMENT
-		// and SENTRY_RELEASE environment variables.
-		// Environment: "Production",
-		// Release:     "my-project-name@1.0.0",
-		// Enable printing of SDK debug messages.
-		// Useful when getting started or trying to figure something out.
-		Debug:       true,
-		Environment: common.Env.RunEnv,
-		// Set TracesSampleRate to 1.0 to capture 100%
-		// of transactions for performance monitoring.
-		// We recommend adjusting this value in production,
-		TracesSampleRate: 1,
-		AttachStacktrace: true,
-	})
+	// err = sentry.Init(sentry.ClientOptions{
+	// 	// Either set your DSN here or set the SENTRY_DSN environment variable.
+	// 	Dsn: "https://fde61d937fcf4562bc7de1e439be1f21@sentry1.vibrant-america.com/37",
+	// 	// Either set environment and release here or set the SENTRY_ENVIRONMENT
+	// 	// and SENTRY_RELEASE environment variables.
+	// 	// Environment: "Production",
+	// 	// Release:     "my-project-name@1.0.0",
+	// 	// Enable printing of SDK debug messages.
+	// 	// Useful when getting started or trying to figure something out.
+	// 	Debug:       true,
+	// 	Environment: common.Env.RunEnv,
+	// 	// Set TracesSampleRate to 1.0 to capture 100%
+	// 	// of transactions for performance monitoring.
+	// 	// We recommend adjusting this value in production,
+	// 	TracesSampleRate: 1,
+	// 	AttachStacktrace: true,
+	// })
 
-	if err != nil {
-		common.Fatalf("sentry.Init", err)
-	}
-	defer sentry.Flush(2 * time.Second)
+	// if err != nil {
+	// 	common.Fatalf("sentry.Init", err)
+	// }
+	// defer sentry.Flush(2 * time.Second)
 
 	//explicitly init all services
 	service.GetTubeService(dbClient, redisClient)
@@ -561,6 +567,7 @@ func main() {
 	}(asynqClient)
 
 	// Kafka Subscriber Initialization
+	/*
 	if kafkaAvailable {
 		common.Infof("Starting Kafka subscribers...")
 		eventHandler := subscriber.NewEventHandler(dbClient, asynqClient, context.Background(), common.LocalKafkaConfigs.Address, localDialer)
@@ -568,7 +575,7 @@ func main() {
 			go func() {
 				defer func() {
 					if r := recover(); r != nil {
-						common.Warn("Panic recovered in eventHandler.Run() for dev_docker_compose", zap.Any("panic", r), zap.Stack("stack"))
+						common.Warn("Panic recovered in eventHandler.Run() for dev_docker_compose")
 					}
 				}()
 				common.Info("eventHandler.Run() starting in goroutine for dev_docker_compose")
@@ -588,7 +595,7 @@ func main() {
 				go func() {
 					defer func() {
 						if r := recover(); r != nil {
-							common.Warn("Panic recovered in cdcUpdateHandler.Run() for dev_docker_compose", zap.Any("panic", r), zap.Stack("stack"))
+							common.Warn("Panic recovered in cdcUpdateHandler.Run() for dev_docker_compose")
 						}
 					}()
 					common.Info("cdcUpdateHandler.Run() starting in goroutine for dev_docker_compose")
@@ -599,7 +606,7 @@ func main() {
 			}
 		}
 	}
-	// No "else" here, as warnings about Kafka unavailability are logged when kafkaAvailable is set to false.
+	*/
 
 	// start health check
 	//handler.HandleHTTPHealthCheck()

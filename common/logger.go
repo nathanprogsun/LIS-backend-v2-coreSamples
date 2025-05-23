@@ -165,3 +165,21 @@ func RecordAuditLog(entry AuditLogEntry) {
 	}
 	ZapLogger.Info("Audit Log", fields...)
 }
+
+func Info(msg string) {
+	// in case logger isn't initialized yet
+	if ZapLogger == nil {
+		logger.Info(msg)
+		return
+	}
+	ZapLogger.Info(msg)
+}
+
+func Warn(msg string) {
+	// in case logger isn't initialized yet
+	if ZapLogger == nil {
+		logger.Warn(msg)
+		return
+	}
+	ZapLogger.Warn(msg)
+}

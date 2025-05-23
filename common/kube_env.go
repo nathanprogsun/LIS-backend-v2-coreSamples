@@ -2,9 +2,10 @@ package common
 
 import (
 	"encoding/json"
-	capi "github.com/hashicorp/consul/api"
-	"log"
+	"fmt"
 	"os"
+
+	capi "github.com/hashicorp/consul/api"
 )
 
 const (
@@ -47,6 +48,9 @@ func InitEnv() {
 		consulHttpAddr := os.Getenv("CONSUL_HTTP_ADDR")
 		if consulHttpAddr != "" {
 			Env.ConsulConfigAddr = consulHttpAddr
+		} else {
+			// Default to localhost if CONSUL_HTTP_ADDR is not set
+			Env.ConsulConfigAddr = "localhost:8500"
 		}
 		// Set default log level from ENV if provided, otherwise InitEnvFromConsul might override it
 		// or it might rely on Consul. For docker-compose, direct ENV is better.
@@ -88,11 +92,29 @@ func InitEnv() {
 func InitEnvFromConsul(client *capi.Client, prefix string, key string) {
 	val, _, err := client.KV().Get(prefix+"/"+key, nil)
 	if err != nil {
-		log.Fatal(err)
+		if Env.RunEnv == DevDockerComposeEnv {
+			// In dev_docker_compose mode, log the error but don't fatal
+			Error(fmt.Errorf("failed to get config from Consul in dev_docker_compose mode: %w", err))
+			return
+		}
+		Fatal(err)
+	}
+	if val == nil || val.Value == nil {
+		if Env.RunEnv == DevDockerComposeEnv {
+			// In dev_docker_compose mode, log the warning but don't fatal
+			Warn("No config found in Consul for dev_docker_compose mode")
+			return
+		}
+		Fatal(fmt.Errorf("config key not found in Consul: %s/%s", prefix, key))
 	}
 	err = json.Unmarshal(val.Value, &Env)
 	if err != nil {
-		log.Fatal(err)
+		if Env.RunEnv == DevDockerComposeEnv {
+			// In dev_docker_compose mode, log the error but don't fatal
+			Error(fmt.Errorf("failed to unmarshal config from Consul in dev_docker_compose mode: %w", err))
+			return
+		}
+		Fatal(err)
 	}
 	Env.ConsulClient = client
 }
