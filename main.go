@@ -16,6 +16,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -64,8 +65,24 @@ func main() {
 			localConsulClient = common.GetConsulApiClient("http", "192.168.60.9", 8500, common.Env.LocalConsulToken, "")
 		}
 	} else if common.Env.RunEnv == common.DevDockerComposeEnv {
-		// Use localhost for Consul in dev_docker_compose mode
-		consulClient = common.GetConsulApiClient("http", "localhost", 8500, common.Env.ConsulToken, "")
+		consulAddr := os.Getenv("CONSUL_HTTP_ADDR")
+		if consulAddr == "" {
+			common.Fatal(fmt.Errorf("CONSUL_HTTP_ADDR environment variable not set for dev_docker_compose mode"))
+		}
+		parts := strings.Split(consulAddr, ":")
+		if len(parts) != 2 {
+			common.Fatal(fmt.Errorf("invalid CONSUL_HTTP_ADDR format: %s. Expected host:port", consulAddr))
+		}
+		host := parts[0]
+		portStr := parts[1]
+		port, err := strconv.ParseInt(portStr, 10, 64)
+		if err != nil {
+			common.Fatal(fmt.Errorf("invalid port in CONSUL_HTTP_ADDR: %s. Error: %w", portStr, err))
+		}
+		common.InfoFields("Using Consul address from CONSUL_HTTP_ADDR for dev_docker_compose mode.",
+			zap.String("host", host),
+			zap.Int64("port", port))
+		consulClient = common.GetConsulApiClient("http", host, port, common.Env.ConsulToken, "")
 	} else {
 		consulClient = common.GetConsulApiClient("http", common.Env.ConsulConfigAddr, 8500, common.Env.ConsulToken, "")
 	}
