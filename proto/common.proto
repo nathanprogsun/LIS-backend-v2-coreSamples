@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+message SimpleResponse {
+  string message = 1;
+}
+
+
+message CheckPermissionResponse {
+  bool granted = 1;
+  string message = 2;
+}

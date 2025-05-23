@@ -1,0 +1,220 @@
+syntax = "proto3";
+
+// import "google/protobuf/duration.proto";
+// import "google/protobuf/timestamp.proto";
+import "proto/customer.proto";
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+
+service ClinicService{
+  rpc CreateClinic(CreateClinicRequest) returns (Clinic){}
+  rpc GetClinic (GetClinicRequest) returns (GetClinicResponse){}
+  rpc ListClinic(ListClinicRequest) returns (GetClinicResponse){}
+  rpc ListClinicCustomers(ListClinicCustomerRequest) returns (ListClinicCustomerResponse){}
+  rpc GetCustomerClinicNames(GetCustomerClinicNamesRequest) returns(GetCustomerClinicNamesResponse){}
+  rpc GetClinicsClinicAccountIDs(GetClinicsClinicAccountIDsRequest) returns(GetClinicResponse){}
+
+  rpc ListClinicCustomersByClinicID(ListClinicCustomersByClinicIDRequest) returns (ListClinicCustomerByIDResponse){}
+
+
+
+  //Version 0.7.3.7
+  rpc GetClinicByID (ClinicID) returns (FullClinic){}
+  //Version 0.7.3.9
+  rpc UpdateClinicNPINumber(UpdateClinicNPINumberRequest) returns (GetClinicResponse){}
+  rpc EditClinicName(EditClinicNameRequest) returns(GetClinicResponse){}
+  rpc modifyClinicNames(modifyClinicNamesRequest) returns (GetClinicResponse){}
+
+  rpc SearchClinicsByName(SearchClinicsNameRequest) returns(SearchClinicsInfoResponse){};
+  rpc SignUpClinicForExistingAccount (SignUpClinicRequest) returns (SignUpClinicResponse);
+
+  rpc CheckClinicAttributes(CheckClinicAttributesRequest) returns (CheckClinicAttributesResponse){};
+
+  // VP-4965
+  rpc GetFirstCustomerOfClinic(GetFirstCustomerOfClinicRequest) returns (GetFirstCustomerOfClinicResponse){};
+  rpc FuzzySearchClinics(FuzzySearchClinicsRequest) returns(SearchClinicsInfoResponse){};
+
+  rpc GetClinicAddress(ClinicID) returns (GetClinicAddressResponse);
+
+}
+
+message GetFirstCustomerOfClinicRequest{
+  string clinic_id = 1;
+}
+
+message GetFirstCustomerOfClinicResponse{
+  int32 customer_id = 1;
+  int32 user_id = 2;
+  string customer_first_name = 3;
+  string customer_last_name = 4;
+  string customer_middle_name = 5;
+  string customer_suffix = 6;
+  bool isActive = 7;
+}
+
+// Request protobuf for Clinic Attribute Value Check
+message CheckClinicAttributesRequest{
+  string clinic_id = 1;
+}
+
+// Response protobuf for Clinic Attribute Value Check
+message CheckClinicAttributesResponse{
+  bool clinic_attribute_value_exists = 1;
+}
+
+message SignUpClinicRequest {
+  string token = 1;
+  string clinic_name = 2;
+  string clinic_address = 3;
+  string clinic_city = 4;
+  string clinic_state = 5;
+  string clinic_zip = 6;
+  string clinic_country = 7;
+  string clinic_phone = 8;
+  string clinic_email = 9;
+  string clinic_website = 10;
+  string clinic_fax = 11;
+  string clinic_npi_number = 12;
+}
+
+// Response DTO
+message SignUpClinicResponse {
+  int32 code = 1;
+  string message = 2;
+  int32 clinic_id = 3;
+}
+
+
+
+// Request protobuf for Search Clinics by Name
+message SearchClinicsNameRequest{
+  string clinics_name = 1;
+}
+
+message ClinicsObject{
+  string clinic_id = 1;
+  string clinic_name = 2;
+}
+
+// Response protobuf for Search Clinics by Name
+message SearchClinicsInfoResponse{
+  repeated ClinicsObject clinics = 1;
+}
+
+message ListClinicCustomersByClinicIDRequest{
+  string clinic_id = 1;
+}
+
+message GetClinicsClinicAccountIDsRequest{
+  repeated string clinic_account_ids = 1;
+}
+
+message EditClinicNameRequest{
+  string clinic_id = 1;
+  string clinic_name = 2;
+}
+
+message modifyClinicNamesRequest{
+  string jwt_token = 1;
+  string clinic_id = 2;
+  string clinic_name = 3;
+}
+
+message UpdateClinicNPINumberRequest{
+  string clinic_id = 1;
+  string clinic_npi_number = 2;
+}
+
+message ListClinicRequest{
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+
+message GetClinicRequest{
+  string clinic_name = 1;
+}
+
+message CreateClinicRequest{
+  string clinic_name = 1;
+}
+message ListClinicResponse{
+  repeated ListClinicResponse response = 1;
+}
+
+message GetClinicResponse{
+  repeated FullClinic response = 1;
+}
+
+message FullClinic{
+  int32 clinic_id = 1;
+  string clinic_name = 2;
+  int32 user_id = 3;
+  string clinic_type = 4;
+  bool isActive = 5;
+  string clinic_npi_number = 6;
+  int32 clinic_account_id = 7;
+}
+
+
+message GetCustomerClinicNamesRequest{
+  string customer_id = 1;
+}
+message GetCustomerClinicNamesResponse{
+  ClinicNames response = 1;
+}
+
+message ClinicNames{
+  repeated ListClinicCustomerRequest clinics = 1;
+}
+
+message ListClinicCustomerRequest{
+  string clinic_name = 1;
+}
+
+message ListClinicCustomerResponse{
+  repeated ClinicCustomers clinic_customers = 1;
+}
+message ListClinicCustomerByIDResponse{
+  ClinicCustomers clinic_customers = 1;
+}
+
+message ClinicCustomers{
+  string clinic_name = 1;
+  repeated FullCustomer customers = 2;
+}
+message ClinicCustomerIds{
+  string customer_id = 1;
+}
+
+message ClinicID{
+  int32 clinic_id = 1;
+}
+message Clinic{
+  int32 clinic_id = 1;
+  string clinic_name = 2;
+}
+
+message FuzzySearchClinicsRequest{
+  string clinic_search_input = 1;
+  string customer_id = 2; // Optional
+}
+
+message ClinicAddress {
+  int32 address_id = 1;
+  string address_type = 2;
+  string street_address = 3;
+  string apt_po = 4;
+  string city = 5;
+  string state = 6;
+  string zipcode = 7;
+  string country = 8;
+  bool address_confirmed = 9;
+  bool is_primary_address = 10;
+}
+
+message GetClinicAddressResponse {
+  repeated ClinicAddress clinic_addresses = 1;
+}

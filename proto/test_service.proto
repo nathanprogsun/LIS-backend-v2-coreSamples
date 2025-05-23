@@ -1,0 +1,127 @@
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+service TestService{
+  rpc GetTest (GetTestRequest) returns (GetTestResponse){}
+  rpc GetTestField (GetTestFieldRequest) returns (GetTestResponse){}
+  rpc CreateTest (CreateTestRequest) returns (CreateTestResponse){}
+  //TODO: implement this
+  rpc GetTestTubeTypes(GetTestTubeTypesRequest) returns (GetTestTubeTypesResponse) {}
+  rpc GetTestIDsFromTestCodes(GetTestIDsFromTestCodesRequest)returns(GetTestIDsFromTestCodesResponse){}
+  rpc GetDuplicateAssayGroupTest (GetDuplicateAssayGroupTestRequest) returns (GetDuplicateAssayGroupTestResponse){}
+}
+
+message GetDuplicateAssayGroupTestRequest{
+  string test_id = 1;
+}
+
+message GetDuplicateAssayGroupTestResponse{
+  repeated int32 duplicate_tests = 1;
+}
+
+message GetTestIDsFromTestCodesRequest{
+  repeated string test_codes = 1;
+}
+
+message GetTestIDsFromTestCodesResponse{
+  repeated TestCodetoTestIDsList response = 1;
+}
+
+message TestCodetoTestIDsList{
+  string test_code = 1;
+  repeated int32 test_ids = 2;
+}
+
+message GetTestTubeTypesRequest {
+  repeated int32 test_ids = 1;
+}
+
+message GetTestTubeTypesResponse {
+  repeated TestTubeInfo test_tube_infos = 1;
+  message TestTubeInfo {
+    int32 test_id = 1;
+    repeated SampleType sample_types = 2;
+
+    message SampleType {
+      string sample_type = 1;
+      repeated string tube_type = 2;
+    }
+  }
+}
+
+message TestID{
+  int32 test_id = 1;
+}
+message Test{
+  int32 id = 1;
+  string test_name = 2;
+  string test_code = 3;
+  int32 test_id = 4;
+  string display_name = 5;
+  string test_description = 6;
+  int32 panel_id = 7;
+  string assay_name = 8;
+  string createdAt = 9;
+  string updatedAt = 10;
+  bool isActive = 11;
+  repeated testDetails test_details = 12;
+}
+
+message CreateTestRequest{
+  bool isActive = 1;
+  string test_name = 2;
+  string test_code = 3;
+  int32 test_id = 4; //this is now ignored since test_id is the new pk and is auto-incremented
+  string display_name = 5;
+  string test_description = 6;
+  string assay_name = 7;
+}
+
+message CreateTestResponse{
+  int32 id = 1;
+  string test_name = 2;
+  string test_code = 3;
+  int32 test_id = 4;
+  string display_name = 5;
+  string test_description = 6;
+  int32 panel_id = 7;
+  string assay_name = 8;
+  string createdAt = 9;
+  string updatedAt = 10;
+  bool isActive = 11;
+}
+
+message GetTestRequest{
+  repeated string test_ids = 1;
+}
+
+message GetTestFieldRequest{
+  repeated string test_ids = 1;
+  repeated string test_detail_names = 2;
+}
+
+message TestS{
+  int32 test_id = 1;
+  string test_names = 2;
+  string test_codes = 3;
+  string test_instrument = 4;
+  string test_type = 5;
+  string test_assay_name = 6;
+  string test_duplicate_assay_name = 7;
+  string test_group_name = 8;
+  string test_turnaround_days = 9 ;
+}
+
+message testDetails{
+  string test_detail_name = 1;
+  string test_details_value = 2;
+}
+
+message GetTestResponse{
+  repeated Test Test = 1;
+}

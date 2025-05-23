@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+message PatientGuestLoginRequest {
+  string patient_accession_id = 1;
+  string patient_birthdate = 2;
+  string patient_first_name = 3;
+  string patient_last_name = 4;
+}
+
+message PatientGuestLoginResponse {
+  int32 patient_id = 1;
+  string token = 2;
+  int64 expiration = 3;
+  int32 code = 4;
+}

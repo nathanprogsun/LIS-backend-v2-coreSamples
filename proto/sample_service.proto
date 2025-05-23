@@ -1,0 +1,928 @@
+syntax = "proto3";
+
+// import "google/protobuf/duration.proto";
+// import "google/protobuf/timestamp.proto";
+
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+import "proto/test_service.proto";
+import "proto/tube_service.proto";
+import "proto/instrument.proto";
+import "proto/address.proto";
+import "proto/contact.proto";
+import "proto/customer.proto";
+//import "proto/clinic.proto";
+
+service SampleService{
+//  rpc CreateSample(CreateSampleRequest) returns (samples){} deprecated
+  rpc ListSampleTests(sample_id) returns (sample_test_id){}
+  rpc ListSamples(id_list) returns (sample_list){}
+  rpc GetSampleTests(sample_id_list) returns (sample_test_list){}
+
+  rpc GetdailyCollectionSamples(sample_received_time) returns (sample_collection_list){}
+  rpc GetdailyCheckNonReceivedSamples(sample_received_time) returns (sample_NonReceived_list){}
+  
+  // New RPC method after version 0.7.2
+  rpc GetSampleTubes(sample_id) returns (tubes){}
+  rpc GetSampleTubesCount(sample_id) returns(Sample_Tubes_Counts_Response){}
+  rpc GetMultiSampleTubesCount(sample_id_list) returns(GetMultiSampleTubesCountListResponse){}
+  rpc ListSamplesAccessionID(accession_ids_list) returns (sample_list){}
+  //TODO: implement this, after patient is in
+//  rpc UpdatePatientBMI(PatientBMI) returns (samples){}
+  // New RPC method for PNS
+  //TODO: implement this, after patient is in
+//  rpc ListSamplePatient(sample_id_list) returns(ListSamplePatientResponse){}
+  // Received Sample Part, Compactable to the inventory service
+  // rpc ReceiveSample(ReceiveSampleRequest) returns (ReceiveSampleResponse){}
+  rpc GetSampleReceiveRecords(GetSampleReceiveRecordsRequest) returns (GetSampleReceiveRecordsResponse){}
+  rpc GetSampleReceiveRecordsBatch(GetSampleReceiveRecordsRequestList) returns (GetSampleReceiveRecordsResponseMap){}
+  rpc ModifySampleReceiveRecord(ModifySampleReceiveRecordRequest) returns (ModifySampleReceiveRecordResponse){}
+  //TODO: implement this after navigator notes is in
+//  rpc GetSampleNavigatorNotes(GetSampleNavigatorNotesRequest) returns (GetSampleNavigatorNotesResponse){}
+  //TODO: implement this, need to figure out the schema here
+//  rpc ListSamplePhlebotomistID(sample_id_list) returns (GetSamplePhlebotomistIDResponse){}
+  rpc ReceiveSampleTubes(ReceiveSampleTubesRequestStaging) returns (ReceiveSampleTubesResponse){}
+  rpc GetSampleTestsInstrument(sample_id_list) returns (sample_test_instrument_list){}
+  rpc GetTubeSampleTypeInfoViaTubeTypeSymbol(getSampleTypeTubeTypeRequest) returns (GetTubeSampleTypeInfoViaTubeTypeSymbolResponseMessage){}
+  rpc GetSampleTubeTypeInfoViaSampleTypeCode(getSampleTypeBySampleTypeCodeRequest) returns(sampleTybeDetailsWithTubes){}
+  rpc GetSampleTubeTypeInfoViaSampleEmunCode(getSampleTypeBySampleTypeEmunRequest) returns(sampleTybeDetailsWithTubes){}
+  //TODO: implement this after patient and customer is in
+//  rpc GetSampleRelevantInfo(sample_id) returns (sampleReleventResponse){}
+  rpc ListSampleMininumInfo(accession_ids_list) returns (sample_list_mininum){}
+  
+  rpc GenerateSampleID(EmptyRequest) returns (GenerateSampleIdResponse){}
+  //TODO: save this one until generatesampleid is in and sorted
+ rpc GenerateBarcodeForSampleID(GenerateBarcodeForSampleIdRequest) returns (GenerateBarcodeForSampleIdResponse){}
+  //TODO: save this one later
+//  rpc SearchSamples(SearchSamplesRequest) returns (SearchSamplesResponse){}
+  //New version search sample(3/2024)
+  rpc new_SearchSamples(new_SearchSamplesRequest) returns (new_SearchSamplesResponse){}
+  rpc GetSampleEarilestCollectionAndReceiveTime(GetSampleEarilestCollectionAndReceiveTimeRequest) returns (GetSampleEarilestCollectionAndReceiveTimeResponse){}
+
+  //check
+  rpc CheckSampleAttributes(CheckSamplesAttributesRequest) returns (CheckSamplesAttributesResponse);
+  rpc BatchCheckSampleAttributes(BatchCheckSamplesAttributesRequest) returns (BatchCheckSamplesAttributesResponse);
+  rpc new_BatchCheckSampleAttributes(new_BatchCheckSamplesAttributesRequest) returns (new_BatchCheckSamplesAttributesResponse);
+
+  //FuzzySearchPhlebotomists
+  rpc FuzzySearchPhlebotomists(FuzzySearchPhlebotomistsRequest) returns (PhlebotomistsResponse){}
+}
+
+message FuzzySearchPhlebotomistsRequest{
+  string phle_search_input = 1;
+}
+
+message PhlebotomistsObject{
+  string phlebotomist_id = 1;
+  string phlebotomist_name = 2;
+  string phlebotomist_display_id = 3;
+  string phlebotomist_practice_name = 4;
+}
+
+message PhlebotomistsResponse{
+  repeated PhlebotomistsObject phlebotomists = 1;
+
+}
+
+// new Request protobuf for Sample Attribute Value Check
+message new_BatchCheckSamplesAttributesRequest{
+  enum SampleAttributeName{
+    sample_id = 0;
+    accession_id = 1;
+  };
+
+  SampleAttributeName sample_attribute_name = 1;
+  repeated string sample_attribute_value = 2;
+}
+
+// new Response protobuf for Sample Attribute Value Check
+message new_BatchCheckSamplesAttributesResponse{
+  repeated string valid_sample_attribute_list = 1;
+  repeated string invalid_sample_attribute_value_list = 2;
+}
+
+
+// Request protobuf for Sample Attribute Value Check
+message BatchCheckSamplesAttributesRequest{
+  enum SampleAttributeName{
+    sample_id = 0;
+    accession_id = 1;
+  };
+
+  SampleAttributeName sample_attribute_name = 1;
+  repeated string sample_attribute_value = 2;
+}
+
+// Response protobuf for Sample Attribute Value Check
+message BatchCheckSamplesAttributesResponse{
+  repeated int64 valid_sample_attribute_list = 1;
+  repeated int64 invalid_sample_attribute_value_list = 2;
+}
+
+
+
+// Request protobuf for Sample Attribute Value Check
+message CheckSamplesAttributesRequest{
+  enum SampleAttributeName{
+    sample_id = 0;
+    accession_id = 1;
+  };
+
+  SampleAttributeName sample_attribute_name = 1;
+  string sample_attribute_value = 2;
+}
+
+// Response protobuf for Sample Attribute Value Check
+message CheckSamplesAttributesResponse{
+  bool sample_attribute_value_exists = 1;
+}
+
+message GetSampleEarilestCollectionAndReceiveTimeRequest{
+  repeated string sample_id_list = 1;
+}
+
+message GetSampleEarilestCollectionAndReceiveTimeResponse{
+  repeated SampleEarilestCollectionAndReceiveTime  result_list = 1;
+}
+
+message SampleEarilestCollectionAndReceiveTime{
+  string sample_id = 1;
+  string collection_date = 2;
+  string received_date = 3;
+}
+
+message SearchSamplesRequest {
+  repeated int32 sample_id_list = 1;
+  repeated string accession_id_list = 2;
+  ClinicSearchInfoList clinic_info_list = 3;
+  ClientSearchInfoList client_info_list = 4;
+  PatientSearchInfoList patient_info_list = 5;
+  PhlebotomistSearchInfoList phlebotomist_info_list = 6;
+  SortInfo sort_info = 7;
+  PageInfo page_info = 8;
+}
+
+message new_SearchSamplesRequest {
+  repeated int32 sample_id_list = 1;
+  repeated string accession_id_list = 2;
+  ClinicSearchInfoList clinic_info_list = 3;
+  ClientSearchInfoList client_info_list = 4;
+  PatientSearchInfoList patient_info_list = 5;
+  string patient_gender = 6;
+  PhlebotomistSearchInfoList phlebotomist_info_list = 7;
+  SortInfo sort_info = 8;
+  PageInfo page_info = 9;
+}
+
+
+message ClinicSearchInfoList{
+  repeated int32 clinic_id_list = 1;
+  repeated string clinic_name_list = 2;
+}
+
+message ClientSearchInfoList{
+  repeated int32 client_id_list = 1;
+  repeated string client_name_list = 2;
+}
+
+message PhlebotomistSearchInfoList{
+  repeated int32 phlebotomist_id_list = 1;
+  repeated string phlebotomist_first_name_list = 2;
+  repeated string phlebotomist_last_name_list = 3;
+  repeated string phlebotomist_email_list = 4;
+}
+
+message PatientSearchInfoList{
+  repeated int32 patient_id_list = 1;
+  repeated string patient_first_name_list = 2;
+  repeated string patient_last_name_list = 3;
+  repeated string patient_email_list = 4;
+  repeated string patient_phone_list = 5;
+  repeated string patient_birthdate_list = 6;
+}
+
+message SortInfo{
+  string sort_by = 1;
+  string sort_order = 2;
+}
+
+message PageInfo{
+  string page_size = 1;
+  string page_number = 2;
+}
+
+// Reponse protobuf for Search Samples
+message SearchSamplesResponse{
+  int32 total_count = 1;
+  repeated SampleResult samples = 2;
+}
+
+message new_SearchSamplesResponse{
+  int32 total_count = 1;
+  repeated new_SampleResult samples = 2;
+}
+
+message SampleResult{
+  string sample_id = 1;
+  string accession_id = 2;
+  string order_time = 3;
+  string sales_name = 4;
+
+  int32 clinic_id = 5;
+  string clinic_name = 6;
+
+  // ClientInfoResult client_info = 7;
+  int32 client_id = 7;
+  string client_name = 8;
+
+  int32 phlebotomist_id = 9;
+  string phlebotomist_first_name = 10;
+  string phlebotomist_last_name = 11;
+  string phlebotomist_email = 12;
+
+  int32 patient_id = 13;
+  string patient_first_name = 14;
+  string patient_last_name = 15;
+  string patient_email = 16;
+  string patient_phone = 17;
+  string patient_birthdate = 18;
+}
+
+message new_SampleResult{
+  string sample_id = 1;
+  string accession_id = 2;
+  string order_time = 3;
+  string sales_name = 4;
+  int32 clinic_id = 5;
+  string clinic_name = 6;
+  int32 client_id = 7;
+  string client_name = 8;
+  int32 phlebotomist_id = 9;
+  string phlebotomist_first_name = 10;
+  string phlebotomist_last_name = 11;
+  string phlebotomist_email = 12;
+  int32 patient_id = 13;
+  string patient_first_name = 14;
+  string patient_last_name = 15;
+  string patient_email = 16;
+  string patient_phone = 17;
+  string patient_birthdate = 18;
+  string patient_gender = 19;
+}
+
+// Message to send the sampleId for which a barcode is required
+message GenerateBarcodeForSampleIdRequest {
+  int32 sampleId = 1; // The sample ID for which barcode needs to be generated
+}
+
+// Message to send back the generated barcode
+message GenerateBarcodeForSampleIdResponse {
+  string barcode = 1; // The generated barcode for the sample ID
+}
+
+// Message to send back the generated sample ID
+message GenerateSampleIdResponse {
+  int32 sampleId = 1; // The generated sample ID
+}
+
+message EmptyRequest {}
+
+
+message ForceFetchSampleBillingOrderIDRequest {
+  repeated string sample_ids = 1;
+}
+
+message ForceFetchSampleBillingOrderIDResponse {
+  repeated SampleBillingOrder sample_orders = 1;
+}
+
+message SampleBillingOrder {
+  string sample_id = 1;
+  string order_id = 2;
+}
+
+
+message Job{
+  string id = 1;
+  string name = 2;
+  string progress = 3;
+  string timestamp = 4;
+}
+
+message sample_list_mininum{
+  repeated sampleMininum sample = 1;
+}
+
+message sampleMininum{
+  string accession_id  = 1;
+  int32 sample_id = 2;
+  int32 customer_id = 3;
+  int32 patient_id = 4;
+}
+
+message sampleReleventResponse{
+  string customer_name = 1;
+  string patient_name = 2;
+  repeated int32 clinic_ids = 3;
+  int32 customer_id = 4;
+  int32 patient_id = 5;
+}
+
+message instrument_list{
+  string  sample_id = 1;
+  repeated string test_instrument = 2;
+}
+message sample_test_instrument_list{
+  repeated instrument_list sample_test_instrument_list = 1;
+}
+
+message ReceiveSampleTubesTubeDetails {
+  int32 id = 1;
+  int64 sample_id = 2;
+  string tube_type = 3;
+  int32 received_count = 4;
+  string received_time = 5; // ISO formatted string for date-time
+  string received_by = 6;
+  string modified_by = 7; // Nullable, so string can be null
+  string modified_time = 8; // Nullable ISO formatted string
+  string collection_time = 9; // ISO formatted string for date-time
+  bool is_redraw = 10;
+  bool is_rerun = 11;
+}
+
+// Temp Result
+message ReceiveSampleTubesResponse{
+  string receive_status = 1;
+  repeated ReceiveSampleTubesTubeDetails receive_details = 2;
+
+}
+
+message ReceiveSampleTubesRequest{
+  string sample_id = 1;
+  repeated TubeDetails tube_details = 2;
+  string received_by = 3;
+  receive_later_request receive_later_body = 4 [deprecated = true];
+  bool send_request_to187 = 5 [deprecated = true];
+  string received_time = 6;
+  bool is_redraw = 7;
+}
+
+message ReceiveSampleTubesRequestStaging{
+  string sample_id = 1;
+  repeated TubeDetails tube_details = 2;
+  string received_by = 3;
+  receive_later_request receive_later_body = 4 [deprecated = true];
+  bool send_request_to187 = 5 [deprecated = true];
+  string received_time = 6;
+  bool is_redraw = 7;
+
+}
+
+message receive_later_request{
+  repeated receive_later_body request_body = 1;
+}
+
+message receive_later_body{
+  string sampleID = 1;
+  string sampleType = 2;
+  string barcode = 3;
+}
+
+message TubeDetails{
+  string tube_type = 1;
+  string collection_time = 2;
+  int32 receive_count = 3;
+}
+
+
+
+message GetSamplePhlebotomistIDResponse{
+  repeated SamplePhlebotomistIDResponse result  = 1;
+}
+
+message SamplePhlebotomistIDResponse{
+  string sample_id = 1;
+  string phlebotomist_id = 2;
+}
+
+message SampleReceiveCount153Response{
+  repeated SampleReceiveCount153 result = 1;
+
+}
+
+message SampleReceiveCount153ResponseList{
+  repeated SampleReceiveCount153Response result = 1;
+
+}
+
+message SampleReceiveCount153{
+  int32 sample_id = 1;
+  string tube_type = 2;
+  int32 tube_count = 3;
+  string collection_time = 4;
+  string receive_time = 5;
+}
+
+message GetSampleNavigatorNotesRequest{
+  string sample_id = 1;
+}
+
+message GetSampleNavigatorNotesResponse{
+  repeated SampleNavigatorNotes notes = 1;
+}
+
+message SampleNavigatorNotes{
+  int32 navigator_note_id = 1;
+  string note = 2;
+  int32 sample_id = 3;
+  int32 created_by_internal_user_id = 4;
+  string created_time = 5;
+  string navigator_note_read_status = 6;
+  string modified_by = 7;
+  string modified_time = 8;
+  string navigator_note_color = 9;
+  string navigator_note_type = 10;
+  string navigator_note_icon = 11;
+  bool is_active = 12;
+}
+
+message ModifySampleReceiveRecordRequest{
+  int32 id = 1;
+  string sample_id = 2;
+  string tube_type = 3;
+  string collection_time = 4;
+  string received_count =5;
+  string received_by = 6;
+  string modified_by = 7;
+  string received_time = 8;
+}
+
+message ModifySampleReceiveRecordResponse{
+  int32 id = 1;
+  int32 sample_id = 2;
+  string tube_type = 3;
+  string collection_time = 4;
+  int32 received_count = 5;
+  string received_by = 6;
+  string received_time = 7;
+  string modified_by = 8;
+  string modified_time = 9;
+}
+
+message GetSampleReceiveRecordsRequest{
+  string sample_id = 1;
+}
+
+message GetSampleReceiveRecordsRequestList{
+  repeated string sample_ids = 1;
+}
+
+message GetSampleReceiveRecordsResponse{
+  repeated ReceiveSampleResponse sample_receive_list = 1;
+}
+
+message SampleReceiveBatchEntry{
+  int32 sample_id = 1;
+  repeated ReceiveSampleResponse sample_details = 2;
+}
+
+message GetSampleReceiveRecordsResponseMap{
+  repeated SampleReceiveBatchEntry sample_receive_batch_entries = 1;
+}
+
+
+// message ReceiveSampleRequest{
+//   int32 sample_id = 1;
+//   string tube_type = 2;
+//   string collection_time = 3;
+//   int32 received_count = 4;
+//   string received_by = 5;
+//   string received_time = 6;
+// }
+
+message ReceiveSampleResponse{
+  int32 id = 1;
+  int32 sample_id = 2;
+  string tube_type = 3;
+  string collection_time = 4;
+  int32 received_count = 5;
+  string received_by = 6;
+  string received_time = 7;
+  string modified_by = 8;
+  string modified_time = 9;
+  bool is_redraw = 10;
+}
+
+message ListSamplePatientResponse{
+  repeated ListSamplePatientMiddleResponse response = 1;
+}
+
+message ListSamplePatientMiddleResponse{
+  SamplePatientDetails patient = 1;
+}
+
+message SamplePatientDetails{
+  int32 patient_id = 1;
+  int32 user_id = 2;
+  string patient_type = 3;
+  int32 customer_id = 4;
+  string patient_gender = 5;
+  string patient_first_name = 6;
+  string patient_last_name = 7;
+  string patient_middle_name = 8;
+  string patient_medical_record_number = 9;
+  string patient_legal_firstname = 10;
+  string patient_legal_lastname = 11;
+  string patient_honorific = 12;
+  string patient_suffix = 13;
+  string patient_marital = 14;
+  string patient_ethnicity = 15;
+  string patient_birthdate = 16;
+  string patient_ssh = 17;
+  string patient_barcode_internal = 18;
+  string patient_height = 19;
+  string patient_weight = 20;
+  int32 officeally_id = 21;
+  string flag = 22;
+  string patient_create_time = 23;
+  repeated PatientAddress patient_address = 24;
+  repeated PatientContact patient_contact = 25;
+  repeated PatientCustomer patient_customer = 26;
+  //Patient Address
+  //Patient Contact
+  //Patient Setting
+  //Patient Customer
+
+}
+
+message PatientAddress{
+  int32 address_id = 1;
+  string address_type = 2;
+  string street_address = 3;
+  string apo_po = 4;
+  string city = 5;
+  string state = 6;
+  string zipcode =7;
+  string country = 8;
+  bool address_confirmed = 9;
+  bool is_primary_address = 10;
+  int32 patient_id = 11;
+  //Since this is patient_address, other relation like customer_id/clinic_id/internal_user_id will be ignored
+}
+
+message PatientContact{
+  int32 contact_id = 1;
+  string contact_description = 2;
+  string contact_details = 3;
+  string contact_type = 4;
+  bool is_primary_contact = 5;
+  int32 patient_id = 6;
+}
+
+message PatientCustomer{
+  int32 customer_id = 1;
+  int32 user_id = 2;
+  string customer_type = 3;
+  string customer_first_name = 4;
+  string customer_last_name = 5;
+  string customer_middle_name = 6;
+  string customer_type_id = 7;
+  string customer_suffix = 8;
+  string customer_sample_received = 9;
+  string customer_request_submit_time = 10;
+  string customer_payment_method = 11;
+  bool isActive = 12;
+}
+
+
+message GetMultiSampleTubesCountListResponse{
+  repeated Sample_Tubes_Counts_Response response = 1;
+}
+message Sample_Tubes_Counts_Response{
+  repeated Sample_Tubes_Counts sample_tube_count = 1;
+}
+message Sample_Tubes_Counts{
+  string tube_type = 1;
+  int32 tube_count = 2;
+}
+message tubes{
+  repeated fulltube tubes = 1;
+}
+
+message fulltube {
+  int32 id = 1;
+  string tube_id = 2;
+  int32 sample_id = 3;
+  string tube_storage = 4;
+  string tube_receive_time = 5;
+  string tube_collection_time = 6;
+  int32 tube_turnaround_time = 7;
+  int32 tube_stability = 8;
+  bool isActive = 9;
+  string issues = 10;
+  repeated fulltubetype tube_types = 11;
+}
+
+message fulltubetype{
+  int32 id = 1;
+  string tube_type = 2;
+  string tube_type_symbol = 3;
+}
+
+
+message samples{
+  string sample_id = 1;
+  string accession_id = 2;
+  int32 tube_count = 3;
+  int32 order_id = 4;
+  string sample_description = 5;
+  int32 patient_id = 6;
+  string sample_collection_time = 7;
+  string sample_received_time = 8;
+  int32 delayed_hours = 9;
+  string sample_report_time = 10;
+  string sample_report_type = 11;
+  string patient_height = 12;
+  string patient_weight = 13;
+  string fasting_status = 14;
+  string fasting_hours = 15;
+  string sample_order_method = 16;
+}
+
+message PatientBMI{
+  string accession_id = 1;
+  string patient_height = 2;
+  string patient_weight = 3;
+}
+
+message CreateSampleRequest{
+  string accession_id = 1;
+  int32 tube_count = 2;
+  int32 order_id = 3;
+  string sample_description = 4;
+  int32 patient_id = 5;
+  string sample_collection_time = 6;
+  string sample_received_time = 7;
+}
+
+message sample{
+  string sample_id = 1;
+  string accession_id = 2;
+  int32 tube_count = 3;
+  int32 order_id = 4;
+  string sample_description = 5;
+  int32 patient_id = 6;
+  string sample_collection_time = 7;
+  string sample_received_time = 8;
+  string sample_report_time =9;
+  string sample_report_type = 10;
+  string sample_type = 11;
+  OrderSample_in_sample order = 12;
+  patients_in_sample patient = 13;
+  string patient_height = 14;
+  string patient_weight = 15;
+  string fasting_status = 16;
+  string fasting_hours = 17;
+  string sample_order_method = 18;
+}
+message patients_in_sample{
+  int32 patient_id = 1;
+  int32 user_id = 2;
+  string patient_gender = 3;
+  string patient_first_name = 4;
+  string patient_last_name = 5;
+  string patient_middle_name = 6;
+  string patient_medical_record_number = 7;
+  string patient_legal_firstname = 8;
+  string patient_legal_lastname = 9;
+  string patient_honorific = 10;
+  string patient_suffix = 11;
+  string patient_marital = 12;
+  string patient_ethnicity = 13;
+  string patient_birthdate = 14;
+  string patient_ssn = 15;
+  string patient_barcode_internal = 16;
+  string patient_height = 17;
+  string patient_weight = 18;
+  int32 officeally_id = 19;
+  string flag = 20;
+}
+
+message OrderSample_in_sample{
+  int32 order_id = 1;
+  string order_title = 2;
+  string order_description = 3;
+  string order_confirmation_number = 4;
+  int32 address_id = 5;
+  int32 contact_id = 6;
+  int32 customer_id = 7;
+  string order_create_time = 8;
+  bool isActive = 9;
+  bool has_order_setting = 10;
+  string order_status = 11;
+  repeated  OrderFlags order_flags = 12;
+  int32 clinic_id = 13;
+  string billing_order_id = 14;
+  string order_kit_status = 15;
+  string order_report_status = 16;
+  string order_billing_issue_status = 17;
+  string order_tnp_issue_status = 18;
+  string order_missing_info_issue_status = 19;
+  string order_receive_issue_status = 20;
+  string order_incomplete_questionnaire_issue_status = 21;
+  string order_ny_waive_form_issue_status = 22;
+  string order_processing_time = 23;
+  string order_redraw_time = 24;
+  string order_cancel_time = 25;
+  string order_lab_issue_status = 26;
+  string order_major_status = 27;
+
+}
+
+
+message OrderFlags{
+  int32 order_flag_id = 1;
+  string order_flag_name = 2;
+  string order_flag_description = 3;
+  string order_flag_color = 4;
+  bool order_flag_is_active = 5;
+  string order_flag_created_at = 6;
+  string order_flag_category = 7;
+  string order_flag_allow_duplicates_under_same_category = 8;
+  int32 order_flag_level = 9;
+}
+
+message sample_list{
+  repeated sample sample = 1;
+}
+
+message sample_id{
+  string sample_id = 1;
+}
+message GetSampleRequest{
+  string sample_id = 1;
+}
+
+message sample_id_list{
+  repeated string sample_ids = 1;
+}
+
+message id_list{
+  repeated string id = 1;
+}
+
+message accession_ids_list{
+  repeated string accession_ids = 1;
+}
+
+message sample_test_id{
+  string sample_id = 1;
+  repeated TestID tests = 2;
+}
+
+message ListLabTestsResponse{
+  string sample_id = 1;
+  repeated TestID tests = 2;
+}
+
+message sample_test{
+  repeated TubeID tube_ids = 1;
+  repeated TestS tests = 2;
+  string sample_collection_time = 3;
+  int32 patient_id = 4;
+  string accession_id = 5;
+  // this seem to have been deprecated
+  repeated instrument instruments = 6;
+  string sample_id = 7;
+}
+
+message sample_test_list{
+  repeated sample_test sample_test = 1;
+}
+
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+message sample_received_time{
+  string starttime = 1;
+  string endtime = 2;
+}
+
+message sample_collection{
+  string sample_id = 1;
+  PatientDetails_in_sample patient = 2;
+ }
+ 
+ message sample_collection_list{
+  repeated sample_collection sample_collection = 1;
+ }
+ 
+ message sample_NonReceived{
+  string sample_id = 1;
+  string accession_id = 2;
+  //int32 count = 3;
+  PatientDetails_in_sample patient = 3;
+ }
+ 
+ message sample_NonReceived_list{
+  repeated sample_NonReceived sample_NonReceived = 1;
+ }
+
+message tubeTypeDetails{
+  string tube_name = 1;
+  string tube_type_enum = 2;
+  string tube_type_symbol = 3;
+  string tube_description = 4;
+  string tube_manufacturer = 5;
+  string tube_model = 6;
+  string primary_sample_type = 7;
+  bool isActive = 8;
+}
+
+message sampleTybeDetails{
+  string sample_type_name = 1;
+  string sample_type_code = 2;
+  string sample_type_emun = 3;
+  string sample_type_emun_old_lis_request = 4;
+  string sample_type_description = 5;
+  string primary_sample_type_group = 6;
+  bool isActive = 7;
+}
+
+message sampleTybeDetailsWithTubes{
+  string sample_type_name = 1;
+  string sample_type_code = 2;
+  string sample_type_emun = 3;
+  string sample_type_emun_old_lis_request = 4;
+  string sample_type_description = 5;
+  string primary_sample_type_group = 6;
+  bool isActive = 7;
+  repeated tubeTypeDetails tube_types = 8;
+}
+
+message GetTubeSampleTypeInfoViaTubeTypeSymbolResponseMessage{
+  repeated tubeTypeDetailsWithSampleTypes result = 1;
+}
+
+
+message tubeTypeDetailsWithSampleTypes{
+  string tube_name = 1;
+  string tube_type_enum = 2;
+  string tube_type_symbol = 3;
+  string tube_description = 4;
+  string tube_manufacturer = 5;
+  string tube_model = 6;
+  string primary_sample_type = 7;
+  bool isActive = 8;
+  repeated sampleTybeDetails sample_types = 9;
+  repeated tubeTypeToTests tests = 10;
+  int32 tube_type_index = 11;
+}
+
+message tubeTypeToTests{
+  int32 test_id = 1;
+  string test_name = 2;
+}
+
+
+message getSampleTypeTubeTypeRequest{
+  string tube_type_symbol = 1;
+}
+
+message getSampleTypeBySampleTypeCodeRequest{
+  string sample_type_code = 1;
+}
+
+message getSampleTypeBySampleTypeEmunRequest{
+  string sample_type_emun = 1;
+}
+
+message PatientDetails_in_sample{
+  int32 patient_id = 1;
+  int32 user_id = 2;
+  string patient_gender = 3;
+  string patient_first_name = 4;
+  string patient_last_name = 5;
+  string patient_middle_name = 6;
+  string patient_medical_record_number = 7;
+  string patient_legal_firstname = 8;
+  string patient_legal_lastname = 9;
+  string patient_honorific = 10;
+  string patient_suffix = 11;
+  string patient_marital = 12;
+  string patient_ethnicity = 13;
+  string patient_birthdate = 14;
+  string patient_ssn = 15;
+  string patient_barcode_internal = 16;
+  string patient_height = 17;
+  string patient_weight = 18;
+  int32 officeally_id = 19;
+  string flag = 20;
+  repeated samples sample = 21;
+  repeated Address patient_address = 22;
+  repeated Contact patient_contact = 23;
+  repeated Customer patient_customer = 24;
+ }

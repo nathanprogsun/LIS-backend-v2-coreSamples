@@ -1,0 +1,278 @@
+syntax = "proto3";
+
+package coresamples_service;
+
+//import "google/protobuf/empty.proto";
+import "proto/common.proto";
+
+option go_package = "./proto;coresamples_service";
+
+service ServiceshipService {
+  rpc SubscriptionAllowed(ClinicName) returns (CheckPermissionResponse) {}
+//  rpc CreateMembership(CreateMembershipRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc Subscribe(SubscribeRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc GetAccountSubscriptions(GetAccountSubscriptionsRequest) returns (AccountSubscriptionsInfo) {}
+  rpc GetChargingSubscription(GetChargingSubscriptionRequest) returns (ChargingSubscriptionInfo) {}
+  rpc AddBillingPlan(AddBillingPlanRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc CreateBillingPlanSet(CreateBillingPlanSetRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc GetLatestBillingPlanSet(ServiceshipID) returns (MembershipBillingPlansInfo) {}
+  rpc GetBillingPlanByID(BillingPlanID) returns (MembershipBillingPlanInfo) {}
+  rpc GetBillingPlanBySubscriptionID(SubscriptionID) returns (MembershipBillingPlanInfo) {}
+  rpc GetPaymentMethods(AccountID) returns (PaymentMethodsInfo) {}
+  rpc CreatePaymentMethod(CreatePaymentMethodRequest) returns (CreatePaymentMethodResponse) {}
+  rpc UpdateSubscriptionPaymentMethod(UpdateSubscriptionPaymentMethodRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc DeletePaymentMethod(DeletePaymentMethodRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc PauseAutoRenew(PauseAutoRenewRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc ResumeAutoRenew(ResumeAutoRenewRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc UpdateSubscriptionBillingPlan(UpdateSubscriptionBillingPlanRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc UpdateSubscriptionEmail(UpdateSubscriptionEmailRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc UpdateAllSubscriptionEmail(UpdateAllSubscriptionEmailRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc GetSubscriptionTransactionInfos(GetSubscriptionTransactionInfosRequest) returns (GetSubscriptionTransactionInfosResponse) {}
+}
+
+message CreateMembershipRequest {
+  string name = 1;
+  string description = 2;
+  repeated float fee = 3;
+  repeated int32 billing_cycles = 4;
+  float credit_rate = 5;
+  float repeat_bonus = 6;
+  bool single_service = 7;
+  int64 caller_account_id = 8; // unused right now
+}
+
+message SubscribeRequest {
+  int64 account_id = 1;
+  string subscriber_name = 2;
+  string email = 3;
+  int32 billing_plan_id = 4;
+  string platform = 5;
+  string payment_token = 6;
+  string customer_token = 7;
+  int64 payment_method_id = 8;
+  string account_type = 9;
+  bool keep_active = 10;
+}
+
+message GetAccountSubscriptionsRequest {
+  int64 account_id = 1;
+  bool include_outdated = 2;
+  string account_type = 3;
+}
+
+message AccountSubscriptionsInfo {
+  repeated AccountSubscription subscriptions = 1;
+  string message = 2;
+}
+
+message AccountSubscription {
+  int32 id = 1;
+  int64 account_id = 2;
+  string subscriber_name = 3;
+  string email = 4;
+  int64 start_time = 5;
+  int64 end_time = 6;
+  string account_type = 7;
+}
+
+message GetChargingSubscriptionRequest {
+  int32 subscription_id = 1;
+}
+
+message ChargingSubscriptionInfo {
+  ChargingSubscription charging_subscription = 1;
+  string message = 2;
+}
+
+message ChargingSubscription {
+  int64 id = 1;
+  int64 account_id = 2; // account_id
+  string account_type = 3; // always "clinic"
+  float amount = 4;
+  int32 status = 5; // 0: inactive, 1: active
+  string currency = 6; // "usd"
+  string charge_type = 7; // always "subscription"
+  int32 charge_type_id = 8; // subscription id
+  string start_at = 9; // "2024-04-30T22:52:29Z"
+  string end_at = 10;
+  string created_at = 11;
+  string updated_at = 12;
+  string last_run = 13;
+  string next_run = 14;
+  string frequency = 15; // "monthly"
+  int32 interval = 16; // 1, 6, 12
+  PaymentMethod payment_method = 17;
+}
+
+message PaymentMethod {
+  int64 id = 1;
+  int64 account_id = 2;
+  string account_type = 3;
+  string type = 4;
+  string token_platform = 5;
+  string payment_token = 6;
+  string card_type = 7;
+  string expiry_date = 9;
+  string last_four = 10;
+}
+
+message MembershipsInfo {
+  repeated Membership memberships = 1;
+  string message = 2;
+}
+
+message Membership {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  bool single_service = 4;
+  float credit_rate = 5;
+  float repeat_bonus_rate = 6;
+}
+
+message ServiceshipID {
+  int32 serviceship_id = 1;
+}
+
+message MembershipInfo {
+  Membership membership = 1;
+  string message = 2;
+}
+
+message AddBillingPlanRequest {
+  int32 serviceship_id = 1;
+  float fee = 2;
+  int32 billing_cycle = 3;
+  string interval = 4; // monthly or daily
+}
+
+message CreateBillingPlanSetRequest {
+  int32 serviceship_id = 1;
+  repeated float fee = 2;
+  repeated int32 billing_cycles = 3;
+  repeated string intervals = 4; // monthly or daily
+  int64 effective = 5;
+}
+
+message MembershipBillingPlansInfo {
+  repeated MembershipBillingPlan billing_plans = 1;
+  string message = 2;
+}
+
+message MembershipBillingPlan {
+  int32 id = 1;
+  float fee = 2;
+  int32 billing_cycle = 3;
+  int64 effective_time = 4;
+}
+
+message BillingPlanID {
+  int32 id = 1;
+}
+
+message SubscriptionID {
+  int32 id = 1;
+}
+
+message MembershipBillingPlanInfo {
+  MembershipBillingPlan billing_plan = 1;
+  string message = 2;
+}
+
+message AccountID {
+  int64 id = 1;
+  string type = 2;
+}
+
+message PaymentMethodsInfo {
+  repeated PaymentMethod payment_methods = 1;
+  string message = 2;
+}
+
+message CreatePaymentMethodRequest {
+  int64 account_id = 1;
+  string platform = 2;
+  string payment_token = 3;
+  string card_type = 4;
+  string expiry_date = 5;
+  string last_four = 6;
+  string customer_token = 7;
+  string account_type = 8;
+}
+
+message UpdateSubscriptionPaymentMethod {
+  int32 subscription_id = 1;
+  int64 payment_id = 2;
+}
+
+message CreatePaymentMethodResponse {
+  int64 payment_method_id = 1;
+  string message = 2;
+}
+
+message UpdateSubscriptionPaymentMethodRequest {
+  int32 subscription_id = 1;
+  int64 payment_method_id = 2;
+}
+
+message DeletePaymentMethodRequest {
+  int64 account_id = 1;
+  int64 payment_method_id = 2;
+  string account_type = 3;
+}
+
+message PauseAutoRenewRequest {
+  int32 subscription_id = 1;
+}
+
+message ResumeAutoRenewRequest {
+  int32 subscription_id = 1;
+  string platform = 2;
+  string payment_token = 3;
+  string customer_token = 4;
+  int64 payment_method_id = 5;
+  string account_type = 6;
+}
+
+message UpdateSubscriptionBillingPlanRequest {
+  int32 subscription_id = 1;
+  int64 billing_plan_id = 2;
+}
+
+message UpdateSubscriptionEmailRequest {
+  string email = 1;
+  int32 subscription_id = 2;
+}
+
+message UpdateAllSubscriptionEmailRequest {
+  string email = 1;
+  int64 account_id = 2;
+  string account_type = 3;
+}
+
+message GetSubscriptionTransactionInfosRequest {
+  int32 subscription_id = 1;
+}
+
+message GetSubscriptionTransactionInfosResponse {
+  TransactionInfos transactions = 1;
+  string message = 2;
+}
+
+message TransactionInfos {
+  repeated Transaction transaction_infos = 1;
+}
+
+message Transaction {
+  string payment_type = 1;
+  float amount = 2;
+  string type = 3;
+  string last_four = 4;
+  string created_at = 5;
+  string status = 6;
+  string card_type = 7;
+}
+
+message ClinicName {
+  string clinic_name = 1;
+}

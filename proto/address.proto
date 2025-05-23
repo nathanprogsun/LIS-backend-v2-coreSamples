@@ -1,0 +1,199 @@
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+
+service AddressService{
+  rpc GetAddress (GetAddressRequest) returns (Address){}
+  rpc UpdateAddress (UpdateAddressRequest) returns (Address){}
+  rpc CreateAddress (CreateAddressRequest) returns (Address){}
+  rpc UpdateGroupAddress(UpdateGroupAddressRequest) returns(CreateOrUpdateGroupAddressResponse){}
+  rpc CreateOrUpdateGroupAddress(CreateOrUpdateGroupAddressRequest) returns(CreateOrUpdateGroupAddressResponse){}
+  rpc ShowCustomerAddress(ShowCustomerAddressRequest) returns(ShowCustomerAddressResponse){}
+  rpc ShowClinicAddress(ShowClinicAddressRequest) returns(ShowCustomerAddressResponse){}
+}
+
+message ShowClinicAddressRequest{
+  int32 clinic_id = 1;
+}
+
+message ShowCustomerAddressRequest{
+  int32 customer_id = 1;
+}
+
+message ShowCustomerAddressResponse{
+  repeated CustomerAddress result = 1;
+}
+
+message CustomerAddress{
+  int32 address_id = 1;
+  string address_type = 2;
+  string street_address = 3;
+  string apt_po = 4;
+  string city = 5;
+  string state = 6;
+  string zipcode = 7;
+  string country = 8;
+  bool address_confirmed = 9;
+  bool is_primary_address = 10;
+  bool hasGroupAddress = 11;
+  bool isGroupAddress = 12;
+  int32 address_level = 13;
+  string address_level_name = 14;
+  int32 group_address_id = 15;
+  bool applyToAllGroupMember = 16;
+  bool useAsDefaultCreateAddress = 17;
+  int32 customer_id = 18;
+  int32 patient_id = 19;
+  int32 clinic_id = 20;
+  int32 internal_user_id = 21;
+  CustomerAddress group_address = 22;
+  bool useGroupAddress = 23;
+}
+
+message CreateOrUpdateGroupAddressResponse{
+  int32 address_id = 1;
+  string address_type = 2;
+  string street_address = 3;
+  string apt_po = 4;
+  string city = 5;
+  string state = 6;
+  string zipcode = 7;
+  string country = 8;
+  bool address_confirmed = 9;
+  bool is_primary_address = 10;
+  bool hasGroupAddress = 11;
+  bool isGroupAddress = 12;
+  int32 address_level = 13;
+  string address_level_name = 14;
+  int32 group_address_id = 15;
+  repeated CreateOrUpdateGroupAddressResponse member_addresses = 16;
+  bool applyToAllGroupMember = 17;
+  bool useAsDefaultCreateAddress = 18;
+  int32 customer_id = 19;
+  int32 patient_id = 20;
+  int32 clinic_id = 21;
+  int32 internal_user_id = 22;
+}
+
+
+message CreateOrUpdateGroupAddressRequest{
+  GroupAddressCreateOrUpdate address_info = 1;
+}
+
+message UpdateGroupAddressRequest{
+  string address_type = 1;
+  string street_address = 2;
+  string apt_po = 3;
+  string city = 4;
+  string state = 5;
+  string zipcode = 6;
+  string country = 7;
+  bool address_confirmed = 8;
+  bool is_primary_address = 9;
+  bool hasGroupAddress = 10;
+  bool isGroupAddress = 11;
+  int32 address_level = 12;
+  string address_level_name = 13;
+  int32 group_address_id = 14;
+  bool applyToAllGroupMember = 15;
+  bool useAsDefaultCreateAddress = 16;
+  int32 clinic_id = 17;
+  int32 address_id = 18;
+}
+
+message GroupAddressCreateOrUpdate{
+  string address_type = 1;
+  string street_address = 2;
+  string apt_po = 3;
+  string city = 4;
+  string state = 5;
+  string zipcode = 6;
+  string country = 7;
+  bool address_confirmed = 8;
+  bool is_primary_address = 9;
+  bool hasGroupAddress = 10;
+  bool isGroupAddress = 11;
+  int32 address_level = 12;
+  string address_level_name = 13;
+  int32 group_address_id = 14;
+  bool applyToAllGroupMember = 15;
+  bool useAsDefaultCreateAddress = 16;
+  int32 clinic_id = 17;
+}
+
+message GroupAddressUpdate{
+  string address_type = 1;
+  string street_address = 2;
+  string apt_po = 3;
+  string city = 4;
+  string state = 5;
+  string zipcode = 6;
+  string country = 7;
+  bool address_confirmed = 8;
+  bool is_primary_address = 9;
+  bool hasGroupAddress = 10;
+  bool isGroupAddress = 11;
+  int32 address_level = 12;
+  string address_level_name = 13;
+  int32 group_address_id = 14;
+  bool applyToAllGroupMember = 15;
+  bool useAsDefaultCreateAddress = 16;
+  int32 clinic_id = 17;
+  int32 address_id = 18;
+}
+
+message GetAddressRequest{
+  string address_id = 1;
+}
+
+message CreateAddressRequest{
+  string address_type = 1;
+  string street_address = 2;
+  string apt_po = 3;
+  string city = 4;
+  string state = 5;
+  string zipcode = 6;
+  string country = 7;
+  int32 customer_id = 11;
+  int32 patient_id = 12;
+  int32 clinic_id = 13;
+  int32 internal_user_id = 14;
+}
+
+message UpdateAddressRequest{
+  string address_id = 1;
+  string address_type = 2;
+  string street_address = 3;
+  string apt_po = 4;
+  string city = 5;
+  string state = 6;
+  string zipcode = 7;
+  string country = 8;
+  bool address_confirmed = 9;
+  bool is_primary_address = 10;
+  bool useGroupAddress = 11;
+  // string address_change_role = 12;
+}
+
+
+message Address{
+  int32 address_id = 1;
+  string address_type = 2;
+  string street_address = 3;
+  string apt_po = 4;
+  string city = 5;
+  string state = 6;
+  string zipcode = 7;
+  string country = 8;
+  bool address_confirmed = 9;
+  bool is_primary_address = 10;
+  int32 customer_id = 11;
+  int32 patient_id = 12;
+  int32 clinic_id = 13;
+  int32 internal_user_id = 14;
+}

@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+service instrumentService{
+  rpc GetInstrument (instrumentID) returns (instrument){}
+  rpc CreateInstrument(CreateInstrumentRequest) returns (instrument){}
+  rpc UpdateInstrument(UpdateInstrumentRequest) returns (instrument){}
+}
+
+message instrumentID{
+  int32 instrument_id = 1;
+}
+message instrument{
+  int32 instrument_id = 1;
+  string instrument_name = 2;
+  string instrument_code = 3;
+  string instrument_location = 4;
+  string instrument_group = 5;
+}
+
+
+message CreateInstrumentRequest{
+
+  string instrument_name = 2;
+  string instrument_code = 3;
+  string instrument_location = 4;
+  string instrument_group = 5;
+}
+
+message UpdateInstrumentRequest{
+  int32 instrument_id = 1;
+  string instrument_name = 2;
+  string instrument_code = 3;
+  string instrument_location = 4;
+  string instrument_group = 5;
+  int32 panel_id = 6;
+}

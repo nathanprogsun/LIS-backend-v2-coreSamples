@@ -1,0 +1,282 @@
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+import "proto/sample_service.proto";
+import "proto/panel.proto";
+
+// Order Messages
+
+
+service OrderService{
+  rpc GetOrder (OrderID) returns (Order){};
+  rpc CancelOrder(OrderID) returns(CancelOrderResponse){};
+  rpc RestoreCanceledOrder(OrderID) returns(RestoreOrderResponse){};
+  rpc AddOrderFlag(AddOrderFlagRequest) returns (AddOrderFlagResponse){};
+  rpc FlagOrder(FlagOrderRequest) returns (FlagOrderResponse){};
+  rpc UnflagOrder(UnflagOrderRequest) returns (UnflagOrderResponse){};
+  rpc ListOrderFlagTypes(ListOrderFlagTypesRequest) returns (ListOrderFlagTypesResponse){};
+  // VA Portal
+  rpc ChangeOrderStatus(ChangeOrderStatusRequest) returns (Order){};
+  rpc GetOrderStatusForDisplay(GetOrderStatusDisplay) returns (GetOrderStatusDisplayResponse){};
+  rpc RerunSampleTests(RerunSampleTestsRequest) returns (RerunSampleTestsResponse){};
+  rpc RestoreOrderStatus(RestoreOrderStatusRequest) returns (RestoreOrderStatusResponse){};
+
+  //   rpc GetPanelInfo (GetAllPanels) returns (PanelInfo){};
+}
+
+
+message RerunSampleTestsRequest{
+  int32 sample_id = 1;
+  repeated int32 test_ids = 2;
+}
+
+message RerunSampleTestsResponse{
+  string send_status = 1;
+  string send_time = 2;
+  string send_log = 3;
+}
+
+
+message ChangeOrderStatusRequest{
+  string order_id = 1;
+  string status = 2;
+}
+
+message CancelOrderResponse{
+  int32 order_id = 1;
+  string order_title = 2;
+  string order_type = 3;
+  int32 parent_order_id = 4;
+  string order_description = 5;
+  string order_confirmation_number = 6;
+  int32 customer_id = 7;
+  string order_create_time = 8;
+  bool isActive = 9;
+  bool has_order_setting = 10;
+  bool order_canceled = 11;
+  int32 sales_id = 12;
+}
+
+message RestoreOrderResponse{
+  int32 order_id = 1;
+  string order_title = 2;
+  string order_type = 3;
+  int32 parent_order_id = 4;
+  string order_description = 5;
+  string order_confirmation_number = 6;
+  int32 customer_id = 7;
+  string order_create_time = 8;
+  bool isActive = 9;
+  bool has_order_setting = 10;
+  bool order_canceled = 11;
+  int32 sales_id = 12;
+  string order_status = 13;
+}
+
+message OrderID{
+  int32 orderID = 1;
+}
+
+message OrderMinimum{
+  int32 order_id = 1;
+  repeated samples samples = 2;
+  string order_title = 3;
+  string order_description = 4;
+  string order_create_time = 5;
+  bool isActive = 6;
+  int32 customer_id =7;
+  string order_type = 8;
+  bool order_canceled = 9;
+  bool order_flagged = 10;
+  repeated  OrderFlagsMinimum order_flags = 11;
+  string order_confirmation_number = 12;
+  string order_status = 13;
+  string billing_order_id = 14;
+  int32 clinic_id = 15;
+}
+
+
+message InitialPatientPageOrderMinimum{
+  int32 order_id = 1;
+  repeated samples samples = 2;
+  string order_title = 3;
+  string order_description = 4;
+  string order_create_time = 5;
+  bool isActive = 6;
+  int32 customer_id =7;
+  string order_type = 8;
+  bool order_canceled = 9;
+  bool order_flagged = 10;
+  string order_confirmation_number = 11;
+  string order_status = 12;
+  string order_kit_status = 13;
+  string order_report_status = 14;
+  string billing_order_id = 15;
+  string order_tnp_issue_status = 16;
+  string order_billing_issue_status = 17;
+  string order_shipping_issue_status = 18;
+  string order_missing_info_issue_status = 19;
+  string order_receive_issue_status = 20;
+  int32 clinic_id = 21;
+  string order_incomplete_questionnaire_issue_status = 22;
+  string order_ny_waive_form_issue_status = 23;
+  string order_processing_time = 24;
+  string order_lab_issue_status = 25;
+  string order_major_status = 26;
+  string order_service_time = 27;
+}
+
+message OrderFlagsMinimum{
+  string order_flag_name = 1;
+  string order_flag_category = 2;
+  int32 order_flag_level = 3;
+}
+
+message Order{
+  int32 order_id = 1;
+  repeated samples samples = 2;
+  string order_title = 3;
+  string order_description = 4;
+  string order_create_time = 5;
+  bool isActive = 6;
+  int32 customer_id =7;
+  string order_type = 8;
+  bool order_canceled = 9;
+  bool order_flagged = 10;
+  repeated  OrderFlags order_flags = 11;
+  string order_confirmation_number = 12;
+  string order_status = 13;
+  string billing_order_id = 14;
+  string order_kit_status = 15;
+  string order_report_status = 16;
+  string order_tnp_issue_status = 17;
+  string order_billing_issue_status = 18;
+  string order_shipping_issue_status = 19;
+  string order_missing_info_issue_status = 20;
+  string order_receive_issue_status = 21;
+  int32 clinic_id = 22;
+  string order_incomplete_questionnaire_issue_status = 23;
+  string order_ny_waive_form_issue_status = 24;
+  string order_service_time = 25;
+
+}
+
+// message OrderFlags{
+//      int32 order_flag_id = 1;
+//      string order_flag_name = 2;
+//      string order_flag_description = 3;
+//      string order_flag_color = 4;
+//      bool order_flag_is_active = 5;
+//      string order_flag_created_at = 6;
+//      string order_flag_category = 7;
+//      string order_flag_allow_duplicates_under_same_category = 8;
+//      int32 order_flag_level = 9;
+// }
+
+message OrderSample{
+  int32 order_id = 1;
+  string order_title = 2;
+  string order_description = 3;
+  string order_comfirmation_number = 4;
+  int32 address_id = 5;
+  int32 contact_id = 6;
+  int32 customer_id = 7;
+  string order_create_time = 8;
+  bool isActive = 9;
+  bool has_order_setting = 10;
+  string order_status = 11;
+  string billing_order_id = 12;
+}
+message AddOrderFlagRequest{
+  string order_flag_name =1;
+  string order_flag_description =2;
+  bool order_flag_allow_duplicates_under_same_category =3;
+  string order_flag_category =4;
+  string order_flaged_by =5;
+}
+message AddOrderFlagResponse{
+  int32 order_flag_id =1;
+  string order_flag_name =2;
+  string order_flag_description =3;
+  string order_flag_color =4;
+  bool order_flag_is_active =5;
+  string order_flag_created_at =6;
+  bool order_flag_allow_duplicates_under_same_category =7;
+  string order_flag_category =8;
+  string order_flaged_by =9;
+
+}
+message FlagOrderRequest{
+  string order_id =1;
+  repeated string order_flag_names =2;
+}
+
+message UnflagOrderRequest{
+  string order_id =1;
+  repeated string order_flag_names =2;
+}
+
+message UnflagOrderResponse{
+  string order_id =1;
+  bool order_flagged = 2;
+  repeated OrderFlags order_flags = 3;
+  string order_title = 4;
+  string order_description = 5;
+  string order_create_time = 6;
+}
+
+message FlagOrderResponse{
+  string order_id =1;
+  bool order_flagged = 2;
+  repeated OrderFlags order_flags = 3;
+  string order_title = 4;
+  string order_description = 5;
+  string order_create_time = 6;
+}
+
+message ListOrderFlagTypesRequest{
+  string customer_id =1;
+}
+
+message ListOrderFlagTypesResponse{
+  repeated AddOrderFlagResponse order_flags =1;
+}
+
+
+message order_flag_display{
+  string order_flag_name =1;
+  string order_flag_display_name =2;
+}
+message patient_flag_display{
+  string patient_flag_name =1;
+  string patient_flag_display_name =2;
+}
+
+message GetOrderStatusDisplay{
+  string data =1;
+}
+
+message GetOrderStatusDisplayResponse{
+  repeated order_flag_display order_flag =1;
+  repeated patient_flag_display patient_flag =2;
+}
+
+message RestoreOrderStatusRequest{
+  string jwt_token = 1;
+  string sample_id = 2;
+}
+
+message RestoreOrderStatusResponse{
+  int32 code = 1;
+  string message = 2;
+}
+
+message UpdateOrderKitStatusRequest {
+  string accession_id = 1;
+  string kit_status = 2;
+}

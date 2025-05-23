@@ -1,0 +1,344 @@
+syntax = "proto3";
+
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+message AddressCDCUpdate {
+    string database = 1; // Database name
+    string table = 2; // Table name
+    string type = 3; // Change type: "insert", "update", or "delete"
+    int64 ts = 4; // Timestamp of the change
+    int64 xid = 5; // Transaction ID
+    bool commit = 6; // Whether the transaction is committed
+
+    // Address Data Schema
+    message AddressData {
+        int32 address_id = 1;                   // Unique identifier for the address
+        string address_type = 2;                // Type of the address (e.g., home, business)
+        string street_address = 3;              // Street address
+        string apt_po = 4;                      // Apartment or PO Box
+        string city = 5;                        // City
+        string country = 6;                     // Country
+        int32 address_confirmed = 7;             // Whether the address is confirmed
+        int32 is_primary_address = 8;            // Whether this is the primary address
+        int32 customer_id = 9;                  // Associated Customer ID
+        int32 patient_id = 10;                  // Associated Patient ID
+        int32 clinic_id = 11;                   // Associated Clinic ID
+        int32 internal_user_id = 12;            // Associated Internal User ID
+        int32 address_level = 13;               // Address hierarchy level
+        string address_level_name = 14;         // Address level name (e.g., "Customer")
+        int32 apply_to_all_group_member = 15;    // Apply this setting to all group members
+        int32 group_address_id = 16;            // ID for group address (if applicable)
+        int32 is_group_address = 17;             // Whether it's a group address
+        int32 use_as_default_create_address = 18; // Use as default for new address creation
+        int32 use_group_address = 19;            // Whether to use group address
+    }
+
+    AddressData data = 7; // New data (insert/update/delete)
+    AddressData old = 8;  // Previous data (for update events only)
+}
+
+message ClinicCDCUpdate {
+  string database = 1; // Database name
+  string table = 2;    // Table name
+  string type = 3;     // Change type: "insert", "update", or "delete"
+  int64 ts = 4;        // Timestamp of the change
+  int64 xid = 5;       // Transaction ID
+  bool commit = 6;     // Whether the transaction is committed
+
+  message Data{
+    int32 clinic_id = 1;
+    string clinic_name = 2;
+    int32 user_id = 3;
+    string clinic_type = 4;
+    int32 isActive = 5;
+    int32 clinic_account_id = 6;
+    string clinic_npi_number = 7;
+    string clinic_permission = 8;
+    string clinic_name_old_system= 9;
+    string clinic_signup_time = 10;
+    string clinic_updated_time = 11;
+  }
+
+  Data data = 7;
+  Data old = 8;
+}
+
+message ContactCDCUpdate {
+  string database = 1;
+  string table = 2;
+  string type = 3;
+  uint64 ts = 4;
+  uint64 xid = 5;
+  bool commit = 6;
+  message ContactData {
+    int32 contact_id = 1;
+    string contact_description = 2;
+    string contact_details = 3;
+    string contact_type = 4;
+    int32 is_primary_contact = 5;
+    int32 is_2fa_contact = 6;
+    int32 customer_id = 7;
+    int32 patient_id = 8;
+    int32 clinic_id = 9;
+    int32 internal_user_id = 10;
+    int32 user_id = 11;
+    int32 applyToAllGroupMember = 12;
+    int32 contact_level = 13;
+    string contact_level_name = 14;
+    int32 group_contact_id = 15;
+    int32 hasGroupContact = 16;
+    int32 isGroupContact = 17;
+    int32 useAsDefaultCreateContact = 18;
+    int32 useGroupContact = 19;
+  }
+  ContactData data = 7;
+  ContactData old = 8;
+}
+
+message CustomerCDCUpdate {
+  string database = 1;
+  string table = 2;
+  string type = 3;
+  uint64 ts = 4;
+  uint64 xid = 5;
+  bool commit = 6;
+  message Data {
+    int32 customer_id=1;
+    int32 user_id=2;
+    string customer_type=3;
+    string customer_first_name=4;
+    string customer_last_name=5;
+    string customer_middle_name=6;
+    string customer_type_id=7;
+    string customer_suffix=8;
+    string customer_samples_received=9;
+    string customer_request_submit_time=10;
+    string customer_signup_time=11;
+    string customer_payment_method=12;
+    int32 isActive=13;
+    int32 sales_id=14;
+    string customer_npi_number=15;
+    string customer_permission=16;
+    string referral_source=17;
+    int32 order_placement_allowed=18;
+    int32 beta_program_enabled=19;
+    string onboarding_questionnaire_filled_on=20;
+  }
+  Data data = 7;
+  Data old = 8;
+}
+
+message InternalUserCDCUpdate {
+  string database = 1;
+  string table = 2;
+  string type = 3;
+  uint64 ts = 4;
+  uint64 xid = 5;
+  bool commit = 6;
+  message Data {
+    int32 internal_user_id=1;
+    string internal_user_role=2;
+    string internal_user_name=3;
+    string internal_user_firstname=4;
+    string internal_user_lastname=5;
+    string internal_user_middlename=6;
+    string internal_user_type_id=7;
+    int32 internal_user_is_full_time=8;
+    int32 internal_user_region=9;
+    string internal_user_email=10;
+    string internal_user_phone=11;
+    int32 isActive=12;
+    string username=13;
+    int32 user_id=14;
+    string internal_user_type=15;
+    int32 internal_user_role_id=16;
+  }
+  Data data = 7;
+  Data old = 8;
+}
+
+message PatientCDCUpdate {
+  string database = 1; // Database name
+  string table = 2;    // Table name
+  string type = 3;     // Change type: "insert", "update", or "delete"
+  int64 ts = 4;        // Timestamp of the change
+  int64 xid = 5;       // Transaction ID
+  bool commit = 6;     // Whether the transaction is committed
+
+  message Data{
+    int32 patient_id = 1;
+    int32 user_id = 2;
+    string patient_type = 3;
+    int32 original_patient_id = 4;
+    string patient_gender = 5;
+    string patient_first_name = 6;
+    string patient_last_name = 7;
+    string patient_middle_name = 8;
+    string patient_medical_record_number = 9;
+    string patient_legal_firstname = 10;
+    string patient_legal_lastname = 11;
+    string patient_honorific = 12;
+    string patient_suffix = 13;
+    string patient_marital = 14;
+    string patient_ethnicity =15;
+    string patient_birthdate = 16;
+    string patient_ssn = 17;
+    string patient_barcode_i = 18;
+    string patient_height = 19;
+    string patient_weight =20;
+    int32 officeally_id = 21;
+    string paient_create_time =22;
+    int32 customer_id = 23;
+    int32 isActive = 24;
+    int32 patient_flagged = 25;
+    string patient_service_date = 26;
+    string patient_description = 27;
+    string patient_ny_waive_form_issue_status = 28;
+    string patient_language = 29;
+  }
+
+  Data data = 7;
+  Data old = 8;
+}
+
+message SettingCDCUpdate {
+    string database = 1; // Database name
+    string table = 2; // Table name
+    string type = 3; // Change type: "insert", "update", or "delete"
+    int64 ts = 4; // Timestamp of the change
+    int64 xid = 5; // Transaction ID
+    bool commit = 6; // Whether the transaction is committed
+
+    message SettingData {
+        int32 setting_id = 1;                      // Unique identifier of the setting
+        string setting_name = 2;                   // Name of the setting
+        string setting_group = 3;                  // Group to which the setting belongs
+        string setting_description = 4;            // Description of the setting
+        string setting_value = 5;                  // Value of the setting
+        string setting_type = 6;                   // Type of the setting
+        string setting_value_updated_time = 7;     // Timestamp when the value was last updated
+        int32 is_active = 8;                        // Indicates if the setting is active
+        int32 apply_to_all_group_member = 9;        // Whether the setting applies to all group members
+        int32 is_official = 10;                     // Whether the setting is an official system setting
+        int32 setting_level = 11;                  // Level of the setting (e.g., customer-level, clinic-level)
+        string setting_level_name = 12;            // Name corresponding to the setting level
+        int32 use_group_setting = 13;               // Whether to use the group setting instead of an individual setting
+    }
+
+    SettingData data = 7; // New data (insert/update/delete)
+    SettingData old = 8;  // Previous data (for update events only)
+}
+
+message UserCDCUpdate {
+  string database = 1;
+  string table = 2;
+  string type = 3;
+  uint64 ts = 4;
+  uint64 xid = 5;
+  bool commit = 6;
+  message Data {
+    int32 user_id = 1;
+    string username = 2;
+    string email_user_id = 3;
+    string password = 4;
+    string twoFactorAuthenticationSecret = 5;
+    int32 isTwoFactorAuthenticationEnabled = 6;
+    int32 isInternalAdminUser = 7;
+    string user_group = 8;
+    string user_permission = 9;
+    int32 imported_user_with_salt_password = 10;
+    int32 isActive = 11;
+    int32 hasAdminPanelAccess = 12;
+    int32 hasLISAccess = 13;
+  }
+  Data data = 7;
+  Data old = 8;
+}
+
+message CustomerToPatientCDCUpdate {
+  string database = 1;
+  string table = 2;
+  string type = 3;
+  uint64 ts = 4;
+  uint64 xid = 5;
+  bool commit = 6;
+  message Data {
+    int32 A = 1;
+    int32 B = 2;
+  }
+  Data data = 7;
+  Data old = 8;
+}
+
+message CustomerSettingOnClinicsCDCUpdate {
+    string database = 1; // Database name
+    string table = 2; // Table name
+    string type = 3; // Change type: "insert", "update", or "delete"
+    int64 ts = 4; // Timestamp of the change
+    int64 xid = 5; // Transaction ID
+    bool commit = 6; // Whether the transaction is committed
+  
+    message Data {
+        int32 customer_id = 1; // Customer ID
+        int32 clinic_id = 2;   // Clinic ID
+        int32 setting_id = 3;  // Setting ID
+        string setting_name = 4; // Setting Name
+    }
+  
+    Data data = 7; // New data (insert/update/delete)
+    Data old = 8;  // Previous data (for update events only)
+}
+
+
+message ClinicToCustomerCDCUpdate {
+  string database = 1;
+  string table = 2;
+  string type = 3;
+  int64 ts = 4;
+  int64 xid = 5;
+  bool commit = 6;
+
+  message Data {
+    int32 A = 1;
+    int32 B = 2;
+  }
+
+  Data data = 7;
+  Data old = 8;
+}
+
+message ClinicToPatientCDCUpdate {
+  string database = 1; // Database name
+  string table = 2;    // Table name
+  string type = 3;     // Change type: "insert", "update", or "delete"
+  int64 ts = 4;        // Timestamp of the change
+  int64 xid = 5;       // Transaction ID
+  bool commit = 6;     // Whether the transaction is committed
+
+  message Data {
+    int32 A = 1;
+    int32 B = 2;
+  }
+
+  Data data = 7;
+  Data old = 8;
+}
+
+message ClinicToSettingCDCUpdate {
+    string database = 1; // Database name
+    string table = 2; // Table name
+    string type = 3; // Change type: "insert", "update", or "delete"
+    int64 ts = 4; // Timestamp of the change
+    int64 xid = 5; // Transaction ID
+    bool commit = 6; // Whether the transaction is committed
+  
+    message Data {
+      int32 A = 1; // Clinic ID
+      int32 B = 2; // Setting ID
+    }
+  
+    Data data = 7; // New data
+    Data old = 8; // Old data (for update events only)
+  }

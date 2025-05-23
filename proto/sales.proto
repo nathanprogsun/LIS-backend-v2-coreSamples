@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+service SalesService {
+  rpc GetSalesByTerritory(Territory) returns (SalesName) {}
+}
+
+message Territory {
+  string zipcode = 1;
+  string country = 2;
+  string state = 3;
+}
+
+message SalesName {
+  string name = 1;
+}
+
+message Sales{
+  int32 sales_id = 1;
+  string sales_firstname = 2;
+  string sales_lastname = 3;
+  string sales_email = 4;
+}
+
+message saleDetails{
+  int32 sales_id = 1;
+  string sales_firstname = 2;
+  string sales_lastname = 3;
+  string sales_email = 4;
+}
+
+message saleDetailc{
+  int32 sales_id = 1;
+  string sales_name = 2;
+  string sales_email_address = 3;
+  string sales_phone = 4;
+}
+
+message SalesInfo{
+  repeated string sales_name = 1;
+  string page = 2;
+  string perPage = 3;
+}
+
+message saleDetailcList{
+  repeated saleDetailc sales_list = 1;
+}
+
+
+message ListSalesCustomerResponseV7{
+  repeated SalesCustomerV7  sales = 1 ;
+
+}
+message SalesCustomerV7 {
+  repeated saleDetailcWithCustomerV7 customer_sales = 1 ;
+
+}
+message saleDetailcWithCustomerV7{
+  int32 customer_id = 1;
+  string customer_first_name = 2;
+  string customer_last_name = 3;
+  string customer_middle_name = 4;
+  saleDetailcV7 internal_user =5;
+}
+message saleDetailcV7{
+  int32 internal_user_role_id = 1;
+  string internal_user_firstname = 2;
+  string internal_user_lastname = 3;
+  string internal_user_middlename = 4;
+  string internal_user_email = 5;
+  string internal_user_phone = 6;
+}
+
+message ListCustomerPracticeResponse{
+  repeated CustomerPractice  practice_name = 1 ;
+}
+message CustomerPractice{
+  repeated CustomerPracticel1  customer_practice = 1 ;
+}
+message CustomerPracticel1{
+  string internal_user_firstname = 1;
+  string internal_user_lastname = 2;
+  string internal_user_middlename =3;
+  repeated CustomerPracticel2 clinic =4;
+}
+message CustomerPracticel2{
+  string clinic_name=1;
+}
+// message CustomerPracticel3{
+//     string clinic_name=1;
+//   }

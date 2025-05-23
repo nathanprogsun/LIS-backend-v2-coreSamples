@@ -1,0 +1,10 @@
+membership:
+  BasicMembership:
+    name: Basic Membership
+    description: This is the basic membership
+    account_type: clinic
+    allowed_services:
+      - report service
+    bonus:
+      credit_rate: 0.02
+      repeat_patient_bonus_rate: 0.02

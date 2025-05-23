@@ -1,0 +1,5 @@
+.idea
+setenv.sh
+.DS_Store
+dump.rdb
+coresamples

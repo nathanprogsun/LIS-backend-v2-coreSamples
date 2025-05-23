@@ -1,0 +1,307 @@
+syntax = "proto3";
+
+package coresamples_service;
+
+import "google/protobuf/empty.proto";
+import "proto/common.proto";
+
+option go_package = "./proto;coresamples_service";
+
+service RBACService {
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse) {}
+  rpc CheckCreateRolePermission(CheckCreateRoleRequest) returns (CheckPermissionResponse) {}
+  rpc CheckDeleteRolePermission(CheckDeleteRoleRequest) returns (CheckPermissionResponse) {}
+  rpc CreateRole(CreateRoleRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse) {}
+  rpc CheckAddPermissionPermission(CheckEditRolePermissionRequest) returns (CheckPermissionResponse) {}
+  rpc CheckDeletePermissionPermission(CheckEditRolePermissionRequest) returns (CheckPermissionResponse) {}
+  rpc AddPermissionToRole(AddPermissionToRoleRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc AddPermissionToUser(AddPermissionToUserRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc DeletePermissionFromRole(DeletePermissionFromRoleRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc DeletePermissionFromUser(DeletePermissionFromUserRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc GetAccountRoleInternalNames(GetAccountRoleInternalNamesRequest) returns (GetAccountRoleInternalNamesResponse) {}
+  rpc GetAccountRoles(GetAccountRolesRequest) returns (GetRolesResponse) {}
+  rpc GetAccountPermissions(GetAccountPermissionsRequest) returns (GetPermissionsResponse) {}
+  rpc GetRolePermissions(GetRolePermissionsRequest) returns (GetPermissionsResponse) {}
+  rpc GetNonPrivateRoles(google.protobuf.Empty) returns (GetRolesResponse) {} /*get roles that are not within a clinic*/
+  rpc GetRolesByType(GetRolesByTypeRequest) returns (GetRolesResponse) {}
+  rpc GetRoleTypeByInternalName(GetRoleTypeByInternalNameRequest) returns (GetRoleTypeByInternalNameResponse) {}
+  rpc CheckAssignRolePermission(CheckAssignRolePermissionRequest) returns (CheckPermissionResponse) {}
+  rpc CheckRemoveRolePermission(CheckRemoveRolePermissionRequest) returns (CheckPermissionResponse) {}
+  rpc AssignRoleToAccount(AssignRoleToAccountRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc RemoveRoleFromAccount(RemoveRoleFromAccountRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc CheckResourcePermission(CheckResourcePermissionRequest) returns (CheckPermissionResponse) {}
+  rpc CreateResource(CreateResourceRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc DeleteResourceByName(DeleteResourceByNameRequest) returns (DeleteResourceResponse) {}
+  rpc DeleteResourceById(DeleteResourceByIdRequest) returns (DeleteResourceResponse) {}
+  rpc GetResources(google.protobuf.Empty) returns (GetResourcesResponse) {}
+  rpc GetResourceById(GetResourceByIdRequest) returns (GetResourceResponse) {}
+  rpc GetResourceDescription(GetResourceDescriptionRequest) returns (GetResourceDescriptionResponse) {}
+  rpc UpdateResourceDescription(UpdateResourceDescriptionRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc CheckActionPermission(CheckActionRequest) returns (CheckPermissionResponse) {}
+  rpc CreateAction(ActionRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc DeleteAction(ActionRequest) returns (coresamples_service.SimpleResponse) {}
+  rpc GetActions(google.protobuf.Empty) returns (GetActionsResponse) {}
+  rpc GetDefaultPermissions(google.protobuf.Empty) returns (GetDefaultPermissionsResponse) {}
+}
+
+message Role {
+  int32 id = 1;
+  string name = 2;
+  string internal_name = 3;
+  int32  clinic_id = 4;
+  string type = 5;
+}
+
+message Resource {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+}
+
+message Action {
+  int32 id = 1;
+  string name = 2;
+}
+
+message Permissions {
+  string action = 1;
+  repeated string resources = 2;
+}
+
+message CheckCreateRoleRequest {
+  int32 caller_account_id = 1;
+  string role_type_name = 2;
+}
+
+message CheckDeleteRoleRequest {
+  string role_name = 1;
+  int32 clinic_id = 2;
+  int32 caller_account_id = 3;
+}
+
+message CheckEditRolePermissionRequest {
+  int32 caller_account_id = 1;
+  string resource_name = 2;
+  string role_name = 3;
+  int32 clinic_id = 4;
+}
+
+message GetDefaultPermissionsResponse {
+  string compressed_permissions = 1;
+  string message = 2;
+}
+
+message GetActionsResponse {
+  repeated Action actions = 1;
+  string message = 2;
+}
+
+message CheckActionRequest {
+  int32 caller_account_id = 1;
+}
+
+message ActionRequest {
+  string action_name = 1;
+  int32 caller_account_id = 2;
+  string service_name = 3;
+}
+
+message UpdateResourceDescriptionRequest {
+  string resource_name = 1;
+  string description = 2;
+  int32 caller_account_id = 3;
+  string service_name = 4;
+}
+
+message GetResourceDescriptionResponse {
+  string description = 1;
+  string message = 2;
+}
+
+message GetResourceDescriptionRequest {
+  string resource_name = 1;
+}
+
+message GetResourceByIdRequest {
+  int32 resource_id = 1;
+}
+
+message GetResourceResponse {
+  Resource resource = 1;
+  string message = 2;
+}
+
+message GetResourcesResponse {
+  repeated Resource resources = 1;
+  string message = 2;
+}
+
+message DeleteResourceByIdRequest {
+  int32 resource_id = 1;
+  int32 caller_account_id = 2;
+  string service_name = 3;
+}
+
+message DeleteResourceByNameRequest {
+  string resource_name = 1;
+  int32  caller_account_id = 2;
+  string service_name = 3;
+}
+
+message DeleteResourceResponse {
+  int32 num_deleted = 1;
+  string message = 2;
+}
+
+message CheckResourcePermissionRequest {
+  int32 caller_account_id = 1;
+}
+
+message CreateResourceRequest {
+  string name = 1;
+  string description = 2;
+  int32 caller_account_id = 3;
+  string service_name = 4;
+}
+
+message RemoveRoleFromAccountRequest {
+  string role_name = 1;
+  int32 clinic_id = 2;
+  int32 account_id = 3;
+  int32 caller_account_id = 4;
+  string service_name = 5;
+  string domain_type = 6;
+  int32 domain_id = 7;
+}
+
+message CheckAssignRolePermissionRequest {
+  string role_name = 1;
+  int32 clinic_id = 2;
+  int32 caller_account_id = 3;
+}
+
+message CheckRemoveRolePermissionRequest {
+  string role_name = 1;
+  int32 clinic_id = 2;
+  int32 caller_account_id = 3;
+}
+
+message AssignRoleToAccountRequest {
+  string role_name = 1;
+  int32 clinic_id = 2;
+  int32  account_id = 3;
+  int32 caller_account_id = 4;
+  string service_name = 5;
+  string domain_type = 6;
+  int32 domain_id = 7;
+}
+
+message GetRoleTypeByInternalNameRequest {
+  string internal_name = 1;
+}
+
+message GetRoleTypeByInternalNameResponse {
+  string role_type = 1;
+  string message = 2;
+}
+
+message GetRolesByTypeRequest {
+  string type_name = 1;
+}
+
+message GetRolePermissionsRequest {
+  string role_name = 1;
+  int32 clinic_id = 2;
+}
+
+message GetAccountPermissionsRequest {
+  int32 account_id = 1;
+  string domain_type = 2;
+  int32 domain_id = 3;
+}
+
+message GetPermissionsResponse {
+  repeated Permissions permissions = 1;
+  string message = 2;
+}
+
+message GetAccountRolesRequest {
+  int32 account_id = 1;
+  string domain_type = 2;
+  int32 domain_id = 3;
+}
+
+message GetRolesResponse {
+  repeated Role roles = 1;
+  string message = 2;
+}
+
+message GetAccountRoleInternalNamesRequest {
+  int32 account_id = 1;
+}
+
+message GetAccountRoleInternalNamesResponse {
+  repeated string internal_names = 1;
+  string message = 2;
+ }
+
+message DeletePermissionFromRoleRequest {
+  string action_name = 1;
+  string resourceName = 2;
+  string role_name = 3;
+  int32 clinic_id = 4;
+  int32 caller_account_id = 5;
+  string service_name = 6;
+}
+
+message DeletePermissionFromUserRequest {
+  string action_name = 1;
+  string resource_name = 2;
+  int32 account_id = 3;
+  int32 caller_account_id = 5;
+}
+
+message AddPermissionToRoleRequest {
+  string action_name = 1;
+  string resource_name = 2;
+  string role_name = 3;
+  int32 clinic_id = 4;
+  int32 caller_account_id = 5;
+  string service_name = 6;
+}
+
+message AddPermissionToUserRequest {
+  string action_name = 1;
+  string resource_name = 2;
+  int32  account_id = 3;
+  int32 caller_account_id = 4;
+}
+
+message DeleteRoleRequest {
+  string role_name = 1;
+  int32 clinic_id = 2;
+  int32 caller_account_id = 3;
+  string service_name = 5;
+}
+
+message DeleteRoleResponse {
+  int32 num_deleted = 1;
+  string message = 2;
+}
+
+message CreateRoleRequest {
+  string role_name = 1;
+  string role_type_name = 2;
+  int32 clinic_id = 3;
+  int32 caller_account_id = 4;
+  string service_name = 5;
+}
+
+message CheckPermissionRequest {
+  int32 account_id = 1;
+  string action = 2;
+  string resource = 3;
+  string domain_type = 4;
+  int32 domain_id = 5;
+}

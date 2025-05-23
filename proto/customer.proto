@@ -1,0 +1,753 @@
+syntax = "proto3";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "proto/sales.proto";
+import "proto/setting.proto";
+import "proto/address.proto";
+import "proto/contact.proto";
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+service CustomerService{
+  // Version 0.7
+  rpc CreateCustomer(CreateCustomerRequest) returns (Customer){}
+  rpc ListCustomers (CustomerPage) returns (ListCustomersResponse){}
+  rpc GetCustomer (CustomerID) returns (FullCustomer){}
+  rpc GetSalesCustomers (SalesInfo) returns (FullCustomerList){}
+  rpc GetClinicSalesSamples (GetSampleDataByPracticeAndSalesRequest) returns (SampleDataByPracticeAndSalesResponse){}
+  rpc GetCustomerSetting (GetCustomerSettingRequest) returns (GetCustomerSettingResponse){}
+  rpc GetCustomerSales (GetCustomerSalesRequest) returns (ListSalesCustomerResponseV7){}
+
+  // Version 0.7.1
+  rpc UpdateCustomerSetting(UpdateCustomerSettingRequest) returns (UpdateCustomerSettingResponse){}
+
+  rpc UpdateCustomer(UpdateCustomerRequest) returns (UpdateCustomerResponse){}
+  // Version 0.7.3.5
+  rpc CreatePatientInternalNotes(CreatePatientInternalNotesRequest) returns (CreatePatientInternalNotesResponse){}
+  rpc ModifyPatientInternalNotes(ModifyPatientInternalNotesRequest) returns (ModifyPatientInternalNotesResponse){}
+  rpc DeletePatientInternalNotes(DeletePatientInternalNotesRequest) returns (DeletePatientInternalNotesResponse){}
+
+  // Version 0.7.3.7
+  rpc IsNewCustomer(CustomerID) returns (GetIsNewCustomerResponse){}
+
+  // Version 0.7.3.9
+  rpc UpdateCustomerNPI(UpdateCustomerNPIRequest) returns (Customer){}
+  rpc UpdateCustomerSettingFull(UpdateCustomerSettingFullRequest) returns (UpdateCustomerSettingResponse){}
+  rpc EditCustomerSettingProperties(EditCustomerSettingPropertiesequest) returns (UpdateCustomerSettingResponse){}
+  rpc EditCustomerProfileOnSettingPage(EditCustomerProfileOnSettingPageRequest) returns (EditCustomerProfileOnSettingPageResponse){}
+  rpc RemoveCustomerFromClinic(RemoveCustomerFromClinicRequest) returns (EditCustomerProfileOnSettingPageResponse){}
+  rpc JoinCustomerToClinic(JoinCustomerFromClinicRequest) returns (EditCustomerProfileOnSettingPageResponse){}
+
+
+  rpc GetCustomerByIDs (GetCustomerByIDsRequest) returns (GetCustomerByIDsResponse);
+
+  // Version 0.7.4
+  rpc CheckCustomerNPINumber(CheckCustomerNPINumberRequest) returns (NPICheckResult);
+  rpc GetCustomer2FAContact(GetCustomer2FAContactRequest) returns (GetCustomer2FAContactResponse);
+  rpc SignUpCustomer(CustomerSignUpRequest) returns (SignUpResponse);
+
+  rpc SearchClientsByName (SearchcliensNameRequest) returns (SearchclientsInfoResponse){}
+  rpc ListCustomerAllClinics(ListCustomerAllClinicsRequest) returns (ListCustomerAllClinicsResponse){}
+
+  rpc GetStatementData(getStatementRequest) returns (getStatementResponse) {}
+
+  rpc CheckClientAttributes(CheckClientAttributesRequest) returns (CheckClientAttributesResponse){};
+
+  rpc NewEditCustomerProfileOnSettingPage(NewEditCustomerProfileOnSettingPageRequest) returns (NewEditCustomerProfileOnSettingPageResponse){}
+
+  // Version 0.7.5
+
+  rpc AddCustomerWithNPINumber(AddCustomerWithNPINumberRequest) returns (AddCustomerWithNPINumberResponse){}
+
+  //Version 2
+  rpc V2_EditCustomerProfileOnSettingPage(V2_EditCustomerProfileOnSettingPageRequest) returns (V2_EditCustomerProfileOnSettingPageResponse){}
+
+  // VP-4964 OnboardingQuestionnair Check
+  rpc CheckCustomerOnboardingQuestionnaireStatus(CheckCustomerOnboardingQuestionnaireStatusRequest) returns (CheckCustomerOnboardingQuestionnaireStatusResponse){}
+  rpc UpdateCustomerOnboardingQuestionnaireStatus(UpdateCustomerOnboardingQuestionnaireStatusRequest)returns(UpdateCustomerOnboardingQuestionnaireStatusResponse){}
+
+  // Add Native Method of Creating Customer
+  rpc AddCustomerWithNPINumberNative(AddCustomerWithNPINumberRequest) returns (AddCustomerWithNPINumberResponse){}
+  rpc SignUpCustomerV2(CustomerSignUpRequest) returns (SignUpResponse);
+
+  rpc FuzzySearchCustomers(FuzzySearchCustomersRequest) returns (SearchclientsInfoResponse){}
+
+  rpc GetCustomerByNPINumber(NPINumber) returns (GetCustomerByNPINumberResponse){}
+
+  rpc ReinviteNPICheck (ReinviteNPICheckRequest) returns (ReinviteNPICheckResponse){}
+
+  rpc FuzzySearchCustomerClinicName (FuzzySearchRequest) returns (FuzzySearchResponse);
+
+  rpc FetchCustomerBetaProgramsForClinic (FetchCustomerBetaProgramsForClinicInput) returns (FetchCustomerBetaProgramsForClinicResponse);
+
+}
+
+message UpdateCustomerOnboardingQuestionnaireStatusRequest{
+  string customer_id = 1;
+}
+
+message UpdateCustomerOnboardingQuestionnaireStatusResponse{
+  int32 customer_id = 1;
+  string status = 2;
+}
+
+message CheckCustomerOnboardingQuestionnaireStatusRequest{
+  string customer_id = 1;
+}
+
+message CheckCustomerOnboardingQuestionnaireStatusResponse{
+  int32 customer_id = 1;
+  bool is_onboarding_questionnaire_filled = 2;
+  string onboarding_questionnaire_filled_on = 3;
+}
+
+
+
+message AddCustomerWithNPINumberRequest{
+  // Customer Basic Info
+  string customer_first_name = 1;
+  string customer_last_name = 2;
+  string customer_npi_number = 3;
+  string customer_login_email = 4;
+  string customer_notification_email = 5;
+  string customer_phone = 6;
+  // Customer Address
+  string customer_address_line_1 = 7;
+  string customer_address_line_2 =8;
+  string customer_city = 9;
+  string customer_state = 10;
+  string customer_zipcode = 11;
+  string customer_country = 12;
+
+  // Customer Role In Clinic
+  string customer_role = 13;
+  string clinic_id = 14;
+  // Invitation from
+  string invited_from_customer= 15;
+  // Customer Invitation Link
+  string customer_invitation_link = 16;
+  string customer_suffix = 17;
+  repeated string customer_roles = 18;
+}
+
+message AddCustomerWithNPINumberResponse{
+  string status = 1;
+  int32 customer_id = 2;
+  string error_message = 3;
+}
+// Request protobuf for Clinic Attribute Value Check
+message CheckClientAttributesRequest{
+  string customer_id = 1;
+}
+
+// Response protobuf for Clinic Attribute Value Check
+message CheckClientAttributesResponse{
+  bool customer_attribute_value_exists = 1;
+}
+
+message ListCustomerAllClinicsRequest{
+  repeated string customer_ids = 1;
+}
+
+message getStatementRequest{
+  repeated string customerIdList = 1;
+  string start = 2;
+  string end = 3;
+  int32 limit = 4;
+}
+
+message getStatementResponse {
+  repeated StatementData statements = 1;
+}
+
+message StatementData {
+  int32 sample_id = 1;
+  string accession_id = 2;
+  int32 customer_id = 3;
+  int32 patient_id = 4;
+  string created_time = 5;
+  string customer_name = 6;
+  string patient_name = 7;
+  string patient_dob = 8;
+  int32 clinic_id = 9;
+  string clinic_name = 10;
+  string billing_order_id = 11;
+}
+
+message ListCustomerAllClinicsResponse{
+  repeated CustomerBasicInfoWithClinic customer_clinics = 1;
+
+}
+
+message CustomerBasicInfoWithClinic{
+  int32 customer_id = 1;
+  string customer_first_name = 2;
+  string customer_last_name = 3;
+  string customer_middle_name = 4;
+  repeated CustomerClinic clinics = 5;
+}
+// Request protobuf for Search client by Name
+message SearchcliensNameRequest{
+  string client_name = 1;
+}
+
+message ClientsObject{
+  int64 client_id = 1;
+  // int64 customer_id = 1;
+  string client_name = 2;
+}
+
+// message ClientsObject{
+//   int32 customer_id = 1;
+//   string customer_first_name = 2;
+//   string customer_last_name = 3;
+//   string customer_middle_name = 4;
+
+// }
+
+// Response protobuf for Search client by Name
+message SearchclientsInfoResponse{
+  repeated ClientsObject clients = 1;
+
+}
+
+message CustomerSignUpRequest {
+  bool is_us_customer = 1;
+  string customer_npi_number = 2;
+  string credentials = 3;
+  string first_name = 4;
+  string last_name = 5;
+  bool use_practice_id = 6;
+  string practice_name = 7;
+  string existing_client_id = 8;
+  string address_street = 9;
+  string address_apo = 10;
+  string address_city = 11;
+  string address_state = 12;
+  string address_zipcode = 13;
+  string address_country = 14;
+  string contact_phone = 15;
+  string contact_email = 16;
+  string contact_notification_email = 17;
+  string contact_fax = 18;
+  string contact_website = 19;
+  string referenal_source = 20;
+  repeated string interest_tests = 21;
+  // Add more fields as needed (for Clinic Level Info, User Info, etc.)
+  string user_login_email = 22;
+  string user_password = 23;
+  bool sign_up_without_invitation = 24;
+  string customer_role = 25;
+  string invited_from_clinic_id = 26;
+  repeated string customer_roles = 27;
+}
+
+message SignUpResponse {
+  int32 code = 1;
+  string message = 2;
+  int32 customer_id = 3; // Using int64 for safety in case of large IDs
+  string log_in_email = 4;
+  string token = 5;
+
+}
+
+
+message GetCustomer2FAContactRequest {
+  string customer_id = 1;
+}
+
+message GetCustomer2FAContactResponse {
+  repeated Contact2FAList contacts = 1;
+}
+
+message Contact2FAList {
+  int32 contact_id = 1;
+  string contact_description = 2;
+  string contact_details = 3;
+  string contact_type = 4;
+  bool is_primary_contact = 5;
+  bool is_2fa_contact = 6;
+  int32 customer_id = 7;
+  int32 patient_id = 8;
+  int32 clinic_id = 9;
+  int32 internal_user_id = 10;
+  bool applyToAllGroupMember = 11;
+  int32 contact_level = 12;
+  string contact_level_name = 13;
+  int32 group_contact_id = 14;
+  bool hasGroupContact = 15;
+  bool isGroupContact = 16;
+  bool useAsDefaultCreateContact = 17;
+  bool useGroupContact = 18;
+}
+
+
+
+message NPINumber {
+  string npi_number = 1;
+}
+
+message CheckCustomerNPINumberRequest {
+  string npi_number = 1;
+  optional string clinic_id = 2;
+  optional string customer_id = 3;
+  repeated string roles = 4;
+}
+
+message NPICheckResult {
+  string NPI_Check = 1;
+}
+
+message GetCustomerByIDsRequest {
+  repeated string customer_ids = 1;
+}
+
+message GetCustomerByIDsResponse {
+  repeated CustomerBasicInfo customers = 1;
+}
+
+message CustomerBasicInfo {
+  int32 customer_id = 1;
+  int32 user_id = 2;
+  string customer_type = 3;
+  string customer_first_name = 4;
+  string customer_last_name = 5;
+  string customer_middle_name = 6;
+  string customer_type_id = 7;
+  string customer_suffix = 8;
+  int32 customer_samples_received = 9;
+  string customer_request_submit_time = 10;
+  string customer_payment_method = 11;
+  bool isActive = 12;
+  int32 sales_id = 13;
+  string customer_npi_number = 14;
+  string customer_permission = 15;
+  repeated Address customer_address = 16;
+  repeated Contact customer_contact = 17;
+}
+
+
+message RemoveCustomerFromClinicRequest{
+  string customer_id = 1;
+  string clinic_id = 2;
+}
+
+message JoinCustomerFromClinicRequest{
+  string customer_id = 1;
+  string clinic_id = 2;
+  string role = 3;
+  repeated string roles = 4;
+}
+
+message EditCustomerProfileOnSettingPageRequest{
+  string customer_id = 1;
+  string customer_suffix = 2;
+  string customer_firstname = 3;
+  string customer_lastname = 4;
+  string customer_office_phone =5;
+  string customer_primary_contact_email = 6;
+}
+
+message EditCustomerProfileOnSettingPageResponse{
+  string update_status = 1;
+  string error_log = 2;
+  int32 code = 3;
+}
+
+
+
+message EditCustomerSettingPropertiesequest{
+  string customer_id = 1;
+  string customer_setting_name = 2;
+  bool useGroupSetting = 3;
+}
+
+message UpdateCustomerNPIRequest{
+  string customer_id = 1;
+  string customer_npi_number = 2;
+}
+
+message GetIsNewCustomerResponse{
+  string newCustomer = 1;
+}
+
+message DeletePatientInternalNotesRequest{
+  int32 internal_note_id = 1;
+}
+
+message DeletePatientInternalNotesResponse{
+  int32 internal_note_id = 1;
+}
+
+message ModifyPatientInternalNotesRequest{
+  int32 internal_note_id = 1;
+  string note = 2;
+  string modified_by = 3;
+  string internal_note_read_status = 4;
+  string internal_note_color = 5;
+  string internal_note_type = 6;
+  string internal_note_icon = 7;
+}
+
+message ModifyPatientInternalNotesResponse{
+  int32 internal_note_id = 1;
+  string note = 2;
+  int32 patient_id = 3;
+  int32 created_by_customer_id = 4;
+  string created_time = 5;
+  string internal_note_read_status = 6;
+  string modified_by = 7;
+  string modified_time = 8;
+  string internal_note_color = 9;
+  string internal_note_type = 10;
+  string internal_note_icon = 11;
+  bool is_active = 12;
+}
+
+message CreatePatientInternalNotesRequest{
+  string note = 1;
+  int32 patient_id = 2;
+  int32 created_by_customer_id = 3;
+  string modified_by = 4;
+}
+
+message CreatePatientInternalNotesResponse{
+  int32 internal_note_id = 1;
+  string note = 2;
+  int32 patient_id = 3;
+  int32 created_by_customer_id = 4;
+  string created_time = 5;
+  string internal_note_read_status = 6;
+  string modified_by = 7;
+  string modified_time = 8;
+  string internal_note_color = 9;
+  string internal_note_type = 10;
+  string internal_note_icon = 11;
+  bool is_active = 12;
+}
+
+message UpdateCustomerSettingRequest{
+  string customer_id = 1;
+  string customer_setting_name = 2;
+  string customer_setting_value = 3;
+}
+
+message UpdateCustomerSettingFullRequest{
+  string customer_id = 1;
+  string customer_setting_name = 2;
+  string customer_setting_value = 3;
+  bool isActive = 4;
+  bool hasGroupSetting = 5;
+  bool isGroupSetting = 6;
+  bool useGroupSetting = 7;
+  bool isRequiredSetting = 8;
+  int32 clinic_group_setting_id = 9;
+  string user_id = 10;
+}
+
+message UpdateCustomerSettingResponse{
+  string status = 1;
+  string setting_id = 2;
+}
+
+message UpdateCustomerRequest{
+  int32 customer_id = 1;
+  string customer_first_name = 3;
+  string customer_last_name = 4;
+  string customer_middle_name = 5;
+  string customer_type_id = 6;
+  string customer_suffix = 7;
+  string customer_samples_received = 8;
+  string customer_request_submit_time = 9;
+  string customer_payment_method = 10;
+  bool isActive = 11;
+}
+
+message UpdateCustomerResponse{
+  int32 customer_id = 1;
+  string customer_first_name = 3;
+  string customer_last_name = 4;
+  string customer_middle_name = 5;
+  string customer_type_id = 6;
+  string customer_suffix = 7;
+  string customer_samples_received = 8;
+  string customer_request_submit_time = 9;
+  string customer_payment_method = 10;
+  bool isActive = 11;
+}
+
+message customerinfo{
+  int32 customer_id = 1;
+  string customer_name = 2;
+  string phone = 3;
+  string email = 4;
+  string jwt = 5;
+}
+
+message CustomerID{
+  int32 customer_id = 1;
+}
+
+message AllCustomer{
+}
+
+message CustomerPage{
+  string page = 1;
+  string perPage = 2;
+  int32 customer_id = 3;
+}
+
+message CustomerList{
+  repeated Customer Customer = 1;
+}
+
+message CustomerInfo{
+  int32 clinic_id = 1;
+  string customer_first_name = 2;
+}
+
+
+message Customer{
+  int32 customer_id = 1;
+  int32 user_id = 2;
+  string customer_first_name = 3;
+  string customer_last_name = 4;
+  string customer_middle_name = 5;
+  string customer_type_id = 6;
+  string customer_suffix = 7;
+  string customer_samples_received = 8;
+  string customer_request_submit_time = 9;
+  string customer_payment_method = 10;
+  bool isActive = 11;
+  string customer_npi_number = 12;
+}
+
+message CreateCustomerRequest{
+  string customer_first_name = 3;
+  string customer_last_name = 4;
+  string customer_middle_name = 5;
+  string customer_type_id = 6;
+  string customer_suffix = 7;
+  string customer_samples_received = 8;
+  string customer_request_submit_time = 9;
+  string customer_payment_method = 10;
+
+}
+
+message FullCustomer{
+  int32 customer_id = 1;
+  int32 user_id = 2;
+  string customer_first_name = 3;
+  string customer_last_name = 4;
+  string customer_middle_name = 5;
+  string customer_type_id = 6;
+  string customer_suffix = 7;
+  string customer_samples_received = 8;
+  string customer_request_submit_time = 9;
+  string payment_method = 10;
+  bool isActive = 11;
+  repeated Address customer_address = 12;
+  repeated Contact customer_contact = 13;
+  repeated setting customer_settings = 14;
+  repeated CustomerClinic clinics = 15;
+  string customer_npi_number = 16;
+  int32 sales_id = 17;
+  string customer_signup_time = 18;
+}
+message CustomerClinic{
+  int32 clinic_id = 1;
+  string clinic_name = 2;
+  int32 user_id = 3;
+  string clinic_type = 4;
+  bool isActive = 5;
+  string clinic_npi_number = 6;
+  int32 clinic_account_id = 7;
+  repeated string customer_roles = 8;
+  repeated Address customer_addresses = 9;
+  repeated Contact customer_contacts = 10;
+}
+
+message ListCustomersResponse{
+  repeated FullCustomer customers = 1;
+  bool has_next_page = 2;
+  int32 total = 3;
+}
+
+message FullCustomerList{
+  repeated FullCustomer customers = 1;
+}
+
+message CustomerIDList{
+  repeated string customer_ids = 1;
+}
+
+message CustomerNameList{
+  repeated string customer_names = 1;
+}
+
+message GetCustomerSalesRequest{
+  repeated string customer_names = 1;
+  repeated string customer_ids = 2;
+}
+message GetCustomerSettingRequest{
+  int32 customer_id = 1;
+  repeated string settingNameList = 2;
+}
+
+message GetCustomerSettingResponse{
+  int32 customer_id = 1;
+  repeated setting customer_settings = 2;
+}
+
+message GetSampleDataByPracticeAndSalesRequest{
+  repeated string sales_names = 1;
+  string practice_name = 2;
+}
+message SampleDataByPracticeAndSalesResponse{
+  repeated PracticeAndSale Sample = 1;
+}
+
+message PracticeAndSale{
+  repeated PracticeAndSalea SampleResult = 1;
+}
+message PracticeAndSalea{
+  repeated PracticeAndSaleac fin_list = 1;
+}
+message PracticeAndSaleac{
+  int32 sales_id = 1;
+  PracticeAndSaleCus customer_info = 2;
+  repeated PracticeAndSaleSam samples = 3;
+
+}
+message PracticeAndSaleCus{
+  int32 customer_id = 1;
+  string customer_first_name = 2;
+  string customer_last_name = 3;
+  string customer_middle_name = 4;
+}
+
+message PracticeAndSaleSam{
+  int32 sample_id = 1;
+  string sample_received_time = 2;
+  string accession_id = 3;
+  OrderTime order = 4;
+
+}
+
+message OrderTime{
+  string order_create_time = 1;
+}
+
+
+message NewEditCustomerProfileOnSettingPageRequest{
+  int32 clinic_id = 1;
+  string customer_id = 2;
+  string customer_suffix = 3;
+  string customer_firstname = 4;
+  string customer_lastname = 5;
+  string customer_office_phone =6;
+  string customer_primary_contact_email = 7;
+  string customer_new_role = 8;
+}
+
+message NewEditCustomerProfileOnSettingPageResponse{
+  string update_status = 1;
+  string error_log = 2;
+  int32 code = 3;
+}
+
+message V2_EditCustomerProfileOnSettingPageRequest{
+  int32 clinic_id = 1;
+  string customer_id = 2;
+  string customer_suffix = 3;
+  string customer_provider_NPI = 4;
+  string customer_firstname = 5;
+  string customer_lastname = 6;
+
+  string customer_office_phone = 7;
+  string notification_email = 8;
+
+  string customer_street = 9;
+  string apt_po = 10;
+  string customer_city = 11;
+  string customer_state = 12;
+  string country_name = 13;
+  string customer_zipcode = 14;
+
+  string customer_new_role = 15;
+  repeated string customer_new_roles = 16;
+}
+
+message V2_EditCustomerProfileOnSettingPageResponse{
+  string update_status = 1;
+  string error_log = 2;
+  int32 code = 3;
+}
+
+message FuzzySearchCustomersRequest{
+  string customer_search_input = 1;
+  string clinic_id = 2; // Optional
+}
+
+message GetCustomerByNPINumberCustomerIDResponse{
+  int32 customer_id = 1;
+}
+
+message GetCustomerByNPINumberResponse{
+  repeated GetCustomerByNPINumberCustomerIDResponse result = 1;
+}
+
+message NPINumberV2 {
+  string npi_number = 1;
+  optional string clinic_id = 2;
+  optional string customer_id = 3;
+  repeated string roles = 4;
+}
+
+message ReinviteNPICheckRequest {
+  string customer_npi_number = 1;
+  repeated string customer_roles = 2;
+}
+
+message ReinviteNPICheckResponse {
+  string status = 1;
+  string error_message = 2;
+}
+
+message FuzzySearchRequest {
+  string customer_search_input = 1;
+}
+
+message FuzzySearchResponse {
+  repeated CustomerClinicData results = 1;
+}
+
+message CustomerClinicData {
+  int32 customer_id = 1;
+  string customer_name = 2;
+  string clinic_name = 3;
+}
+
+message FetchCustomerBetaProgramsForClinicInput {
+  int32 customer_id = 1;
+  int32 clinic_id = 2;
+}
+
+message FetchCustomerBetaProgramsForClinicResponse {
+  // A list of customer beta program data
+  repeated CustomerBetaProgram result = 1;
+
+  // Error message if any
+  string errorMessage = 2;
+}
+
+// Customer Beta Program data
+message CustomerBetaProgram {
+  int32 customer_id = 1;
+  int32 clinic_id = 2;
+
+  // A list of beta program names the customer is participating in
+  repeated string beta_programs = 3;
+}

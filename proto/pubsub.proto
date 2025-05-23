@@ -1,0 +1,334 @@
+syntax = "proto3";
+
+package coresamples_service;
+
+option go_package = "./proto;coresamples_service";
+
+message GeneralEvent {
+  string event_id = 1;
+  string event_name = 2;
+  string event_time = 3;
+  string event_provider = 4;
+  string event_action = 5;
+  string event_comment = 6;
+  repeated string tube_types = 8;
+  repeated string test_ids = 9;
+  repeated string products = 10;
+  int32 internal_user_id = 11;
+  int32 sample_id = 12;
+  string accession_id = 13;
+  int32 customer_id = 14;
+  int32 patient_id = 15;
+  int32 clinic_id = 16;
+  int32 order_id = 17;
+  string order_confirmation_number = 18;
+  repeated string sample_types = 19;
+  EventAddonColumn addon_column = 20;
+  int32 user_id = 21;
+}
+
+message EventAddonColumn {
+  string orderStatus = 1;
+  string patientId = 2;
+  string clinicId = 3;
+  int64 orderId = 4;
+  string customerId = 5;
+  float amount = 6;
+  string status = 7;
+  string charge_type = 8;
+  string charge_type_id = 9;
+  string account_type = 10;
+  string account_id = 11;
+  repeated TubeDetail tube_details = 12;
+  string received_by = 13;
+  string received_time = 14;
+  bool is_redraw = 15;
+  repeated int64 issue_ids = 16;
+  repeated string beta_programs = 17;
+}
+
+message SubscriptionConfirmationEmail {
+  string MessageID = 1;
+  string Tag = 2;
+  string From = 3;
+  string To = 4;
+  string Cc = 5;
+  string Bcc = 6;
+  string Subject = 7;
+  int32 TemplateId = 8;
+  SubscriptionConfirmationEmailTemplate TemplateModel = 9;
+  int32 Delay = 10;
+  string MessageStream = 11;
+  string Type = 12;
+}
+
+message SubscriptionConfirmationEmailTemplate {
+  string provider_name = 1;
+  string account_name = 2;
+  string invoice_number = 3;
+  string purchased_date = 4;
+  string active_till_date = 5;
+  string renewal_date = 6;
+  string charge = 7;
+  string subtotal = 8;
+  string payable = 10;
+  string payment = 11;
+  string is_half_year = 12;
+  string is_annual = 13;
+  string is_monthly = 14;
+}
+
+message SubscriptionCancellationEmail {
+  string MessageID = 1;
+  string Tag = 2;
+  string From = 3;
+  string To = 4;
+  string Cc = 5;
+  string Bcc = 6;
+  string Subject = 7;
+  int32 TemplateId = 8;
+  SubscriptionCancellationEmailTemplate TemplateModel = 9;
+  int32 Delay = 10;
+  string MessageStream = 11;
+  string Type = 12;
+}
+
+message SubscriptionCancellationEmailTemplate {
+  string provider_name = 1;
+  string cancel_date = 2;
+}
+
+message PaymentUpdateEmail {
+  string MessageID = 1;
+  string Tag = 2;
+  string From = 3;
+  string To = 4;
+  string Cc = 5;
+  string Bcc = 6;
+  string Subject = 7;
+  int32 TemplateId = 8;
+  PaymentUpdateEmailTemplate TemplateModel = 9;
+  int32 Delay = 10;
+  string MessageStream = 11;
+  string Type = 12;
+}
+
+message PaymentUpdateEmailTemplate {
+  string provider_name = 1;
+}
+
+message PostOrderEvent {
+  int32 orderClinicId = 1;
+  int32 clinicId = 2;
+  string orderConfirmationNumber = 3;
+  string sampleId = 4;
+  string customerId = 5;
+
+  message TubeInfo {
+    map<string, int32> noOfTubes = 1;
+    map<string, float> volumeRequired = 2;
+    map<string, int32> noOfDbsBloodTubes = 3;
+    bool isDbsPossible = 4;
+  }
+  TubeInfo tubeInfo = 6;
+
+  OrderContents orderContents = 7;
+  OrderInfo orderInfo = 8;
+}
+
+message OrderContents {
+  repeated int32 customPanels = 1;
+  map<string, string> paymentChoice = 2;
+  repeated int32 tests = 3;
+  repeated int32 testGroups = 4;
+  repeated SpecialTest specialTests = 5;
+  repeated int32 discountPanels = 6;
+}
+
+message OrderInfo {
+  int32 patientId = 1;
+  float total = 2;
+  string chargeMethod = 3;
+  float original_price = 4;
+  float actual_price = 5;
+  float discount_amount = 6;
+  string email = 7;
+  string cell_phone = 8;
+  bool send_text = 9;
+  string bloodKitDeliveryMethod = 10;
+  string nonBloodKitDeliveryMethod = 11;
+  string dryIceKitDeliveryMethod = 12;
+  string send_date = 13;
+  string note_to_patient = 14;
+  string payment_id = 15;
+  bool dbs = 16;
+  string coupon = 17;
+  string international_shipping_fee = 18;
+  repeated OrderItem orderItems = 19;
+  uint64 julienBarcode = 20;
+}
+
+message SpecialTest {
+  int32 splTestId = 1;
+  int32 selPackageId = 2;
+}
+
+message OrderItem {
+  int32 item_id = 1;
+  string item_type = 2;
+  float original_price = 3;
+  float total = 4;
+}
+
+message TubeDetail {
+  string tube_type = 1;
+  string collection_time = 2;
+  int32 receive_count = 3;
+}
+
+message OrderMessage {
+  int32 sample_id = 1;
+  string action = 2;
+  repeated int32 test_id = 3;
+  string receive_time = 4;
+  string collection_time = 5;
+  bool is_rerun = 6;
+  bool is_redraw = 7;
+  bool is_lab_direct_order = 8;
+  string destination = 9;
+  bool is_addon = 10;
+}
+
+message CancelOrderEvent {
+  int64 orderId = 1;
+  int32 sampleId = 2;
+  int32 patientId = 3;
+  int32 customerId = 4;
+}
+
+message ClientTransactionShippingMessage {
+  int32 index = 1;
+  int32 po_number = 2;
+  string tracking_id = 3;
+  string track_id_type = 4;
+  string shipping_method = 5;
+  string current_status = 6;
+  string last_update_time = 7;
+  string kit_status = 8;
+  string estimated_delivery_date = 9;
+  string display_est_delivery_date = 10;
+  string fedex_delivery_date = 11;
+  string box_receive_time = 12;
+  string box_receive_by = 13;
+  string track_id_delete_time = 14;
+  string track_id_delete_by = 15;
+  string track_id_delete_reason = 16;
+  string client_id = 17;
+  string customer_name = 18;
+  string customer_practice_name = 19;
+  string customer_phone_number = 20;
+  string customer_street = 21;
+  string customer_city = 22;
+  string customer_state = 23;
+  string customer_zipcode = 24;
+  string customer_country = 25;
+  string comment = 26;
+}
+
+message ClientTransactionShippingOldMessage {
+  optional int32 index = 1;
+  optional int32 po_number = 2;
+  optional string tracking_id = 3;
+  optional string track_id_type = 4;
+  optional string shipping_method = 5;
+  optional string current_status = 6;
+  optional string last_update_time = 7;
+  optional string kit_status = 8;
+  optional string estimated_delivery_date = 9;
+  optional string display_est_delivery_date = 10;
+  optional string fedex_delivery_date = 11;
+  optional string box_receive_time = 12;
+  optional string box_receive_by = 13;
+  optional string track_id_delete_time = 14;
+  optional string track_id_delete_by = 15;
+  optional string track_id_delete_reason = 16;
+  optional string client_id = 17;
+  optional string customer_name = 18;
+  optional string customer_practice_name = 19;
+  optional string customer_phone_number = 20;
+  optional string customer_street = 21;
+  optional string customer_city = 22;
+  optional string customer_state = 23;
+  optional string customer_zipcode = 24;
+  optional string customer_country = 25;
+  optional string comment = 26;
+}
+
+message ClientTransactionShippingEvent {
+  ClientTransactionShippingMessage data = 1;
+  ClientTransactionShippingOldMessage old = 2;
+  string type = 3;
+}
+
+message RedrawOrderInfoEvent{
+  // Database event metadata
+  string database = 1;
+  string table = 2;
+  string type = 3;
+  int64 ts = 4;
+  int64 xid = 5;
+  bool commit = 6;
+
+  // Event data
+  message Data {
+    int32 sample_id = 1;
+    int64 redraw_id = 2;
+    string old_sample_info = 3;
+    string list_of_tests_run_success = 4;
+    string time_of_request = 5;
+  }
+
+  Data data = 7;
+}
+
+message EditOrderEvent{
+  string order_id = 1;
+  int32 sample_id = 2;
+  string julien_barcode = 3;
+  repeated int32 add_on_test_list = 4;
+  repeated int32 delete_test_list = 5;
+  NewTubeInfo new_tube_info = 6;
+}
+
+message NewTubeInfo {
+  map<string, int32> actual_number_of_tubes = 1;
+  map<string, int32> noOfDbsBloodTubes = 2;
+  map<string, int32> volumeRequired = 3;
+  map<string, int32> noOfTubes = 4;
+  map<string, int32> tube_order_map = 5;
+  map<string, string> actual_volume_required = 6;
+}
+
+message HubspotEvent {
+  string event_id = 1;
+  string event_provider = 2;
+  string event_name = 3;
+  string event_action = 4;
+  string event_comment = 5;
+  string event_time = 6;
+  string table_name = 7;
+  message Schema {
+    string provider_id = 1;
+    string cam_name = 2;
+    string cam_phone = 3;
+    string cam_email = 4;
+    string owner_name = 5;
+    string owner_phone = 6;
+    string owner_email = 7;
+    string change_source = 8;
+    string source_id = 9;
+    string propertyName = 10;
+    string propertyValue = 11;
+  }
+  Schema schema = 8;
+}

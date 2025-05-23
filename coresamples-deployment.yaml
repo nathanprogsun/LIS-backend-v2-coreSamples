@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lis-coresamples-v2-deployment
+  namespace: default
+  labels:
+    app: lis-coresamples-v2
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lis-coresamples-v2
+  template:
+    metadata:
+      labels:
+        app: lis-coresamples-v2
+    spec:
+      containers:
+      - name: lis-coresamples-v2
+        image: 192.168.60.10:6004/vibrant/lis/coresamples-v2:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8083
+          initialDelaySeconds: 20
+          periodSeconds: 80
+          timeoutSeconds: 20
+          failureThreshold: 2
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 8083
+          initialDelaySeconds: 20
+          periodSeconds: 5               
+        ports:
+        - containerPort: 8084
+        - containerPort: 8083
+        env:
+        - name: CONSUL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: lis-coresamples-secret
+              key: CONSUL_TOKEN
+        - name: CONSUL_TOKEN_PROD
+          valueFrom:
+            secretKeyRef:
+              name: lis-coresamples-secret
+              key: CONSUL_TOKEN_PROD 
+        - name: CORESAMPLES_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: lis-coresamples-config
+              key: CORESAMPLES_ENV
+        - name: CONSUL_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: lis-coresamples-config
+              key: CONSUL_ADDR
+        - name: CONSUL_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: lis-coresamples-config
+              key: CONSUL_PREFIX

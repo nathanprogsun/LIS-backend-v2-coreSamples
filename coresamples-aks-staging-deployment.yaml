@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lis-coresamples-v2-deployment-staging
+  namespace: coresamplesv2
+  labels:
+    app: lis-coresamples-v2-staging
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: lis-coresamples-v2-staging
+  template:
+    metadata:
+      labels:
+        app: lis-coresamples-v2-staging
+    spec:
+      terminationGracePeriodSeconds: 200
+      containers:
+      - name: lis-coresamples-v2-staging
+        image: lisportalprod.azurecr.io/vibrant/lis/coresamples-v2:staging
+        imagePullPolicy: Always
+        livenessProbe:
+          grpc:
+            port: 8084
+            service: liveness
+          initialDelaySeconds: 30
+          periodSeconds: 80
+          timeoutSeconds: 20
+          failureThreshold: 2
+        readinessProbe:
+          grpc:
+            port: 8084
+            service: readiness
+          initialDelaySeconds: 30
+          periodSeconds: 5 
+        startupProbe:
+          grpc:
+            port: 8084
+            service: readiness  
+          initialDelaySeconds: 30
+          periodSeconds: 15                
+        ports:
+        - containerPort: 8084
+        - containerPort: 8083
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: CONSUL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: lis-coresamples-secret
+              key: CONSUL_TOKEN
+        - name: CORESAMPLES_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: lis-coresamples-config
+              key: CORESAMPLES_ENV_STAGING
+        - name: CONSUL_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: lis-coresamples-config
+              key: CONSUL_ADDR
+        - name: CONSUL_PREFIX
+          valueFrom:
+            configMapKeyRef:
+              name: lis-coresamples-config
+              key: CONSUL_PREFIX
+      imagePullSecrets:
+        - name: regcred
