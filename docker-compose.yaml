@@ -1,0 +1,146 @@
+version: '3.8'
+
+# LIS Backend v2 - CoreSamples Docker Compose Setup
+#
+# This file sets up the CoreSamples service along with its core dependencies
+# for local development and testing.
+#
+# It is highly recommended to use a .env file in the project root
+# to manage secrets and local configuration overrides.
+# Example .env file:
+#
+# MYSQL_ROOT_PASSWORD_VAL=myrootpassword_changeme
+# MYSQL_USER_VAL=coresamples_user
+# MYSQL_PASSWORD_VAL=coresamples_pass_changeme
+# MYSQL_DATABASE_VAL=coresamples_db
+# JWT_SECRET_VAL=thisisadevelopmentsecret_pleasedontuseinprod_changeme
+#
+# # Optional overrides for host ports or log levels:
+# # CORESAMPLES_LOG_LEVEL=info
+# # MYSQL_HOST_PORT=3308
+# # CONSUL_HOST_PORT=8501
+# # REDIS_HOST_PORT=6380
+# # JAEGER_AGENT_UDP_PORT=6832 # Remember to update JAEGER_AGENT_PORT for coresamples if you change this
+# # JAEGER_UI_HOST_PORT=16687
+
+services:
+  coresamples:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coresamples_service
+    ports:
+      - "8083:8083" # HTTP
+      - "8084:8084" # gRPC
+    environment:
+      - RUN_ENV=dev_docker_compose
+      - LOG_LEVEL=${CORESAMPLES_LOG_LEVEL:-debug}
+      - JWT_SECRET=${JWT_SECRET_VAL:?Error: JWT_SECRET_VAL must be set in .env file}
+      - SENTRY_DSN=${SENTRY_DSN_VAL:-} # Defaults to empty, disabling Sentry
+
+      # Service Discovery & Basic Config (still allow connecting to Consul)
+      - CONSUL_HTTP_ADDR=consul:8500
+      - CONSUL_TOKEN= # No token for local dev Consul by default
+
+      # Database Configuration (intended to override Consul lookups in Go app)
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=${MYSQL_USER_VAL:?Error: MYSQL_USER_VAL must be set in .env file}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD_VAL:?Error: MYSQL_PASSWORD_VAL must be set in .env file}
+      - MYSQL_DATABASE=${MYSQL_DATABASE_VAL:?Error: MYSQL_DATABASE_VAL must be set in .env file}
+      # - MYSQL_DISABLE_TLS=true # Add if Go code supports disabling DB TLS via ENV for dev
+
+      # Redis Configuration (intended to override Consul for standalone Redis in Go app)
+      - REDIS_ADDR=redis:6379
+      # - REDIS_PASSWORD= # No password for local dev Redis by default
+
+      # Jaeger Configuration
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=${JAEGER_AGENT_INTERNAL_PORT:-6831} # Internal port Jaeger agent listens on
+      - JAEGER_SERVICE_NAME=coresamples_v2
+
+      # Kafka - Not included in this compose. App should be resilient.
+      # - KAFKA_BROKERS=kafka:9092
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+      consul:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    networks:
+      - lis_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    ports:
+      - "${MYSQL_HOST_PORT:-3307}:3306" # Mapped to 3307 on host by default
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD_VAL:?Error: MYSQL_ROOT_PASSWORD_VAL must be set in .env file}
+      - MYSQL_DATABASE=${MYSQL_DATABASE_VAL:?Error: MYSQL_DATABASE_VAL must be set in .env file}
+      - MYSQL_USER=${MYSQL_USER_VAL:?Error: MYSQL_USER_VAL must be set in .env file}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD_VAL:?Error: MYSQL_PASSWORD_VAL must be set in .env file}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Optional: ./mysql-init:/docker-entrypoint-initdb.d # For custom init scripts
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u$$MYSQL_USER", "-p$$MYSQL_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lis_network
+
+  consul:
+    image: consul:1.15.4
+    container_name: consul_server
+    ports:
+      - "${CONSUL_HOST_PORT:-8500}:8500" # Consul UI & API
+    volumes:
+      - consul_data:/consul/data
+      # Optional: ./consul-config:/consul/config # For pre-loading K/V data
+    command: agent -dev -ui -client=0.0.0.0 -enable-script-checks=true
+    networks:
+      - lis_network
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: redis_cache
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lis_network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.48.0
+    container_name: jaeger_tracing
+    ports:
+      - "${JAEGER_AGENT_UDP_PORT:-6831}:6831/udp" # Agent UDP listening port
+      - "${JAEGER_UI_HOST_PORT:-16686}:16686"   # Jaeger UI
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411 # Optional
+      - LOG_LEVEL=${JAEGER_LOG_LEVEL:-debug}
+      # Ensure JAEGER_AGENT_HOST in coresamples points to this service,
+      # and JAEGER_AGENT_PORT matches the internal UDP port (default 6831)
+    networks:
+      - lis_network
+
+volumes:
+  mysql_data:
+  consul_data:
+  redis_data:
+
+networks:
+  lis_network:
+    driver: bridge
